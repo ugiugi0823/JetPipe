@@ -1,9 +1,15 @@
 use crate::error::{JetError, JetResult};
 use serde::{Deserialize, Serialize};
 use ssh2::{FileType, MethodType, Session, Sftp};
-use std::net::TcpStream;
+use std::net::{TcpStream, ToSocketAddrs};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
+
+/// Time we wait for the TCP three-way handshake before giving up on a
+/// host. The OS default (~75s on macOS, ~21s on Windows) makes the UI
+/// look frozen for users who forgot to bring up a VPN. 10s is plenty
+/// for any reachable server and fails fast when the route is blocked.
+const TCP_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "lowercase")]
@@ -45,14 +51,30 @@ pub struct SshConnection {
 
 impl SshConnection {
     pub fn connect(req: &ConnectRequest) -> JetResult<Self> {
-        let addr = format!("{}:{}", req.host, req.port);
-        let tcp = TcpStream::connect(&addr)
-            .map_err(|e| JetError::Other(format!("tcp connect to {addr}: {e}")))?;
-        // Long banner/handshake timeouts: some servers stall briefly during
-        // first connection from a new client, especially behind firewalls or
-        // when running rate-limited (fail2ban etc.).
-        tcp.set_read_timeout(Some(Duration::from_secs(60)))?;
-        tcp.set_write_timeout(Some(Duration::from_secs(60)))?;
+        let addr_str = format!("{}:{}", req.host, req.port);
+
+        // Resolve hostname → SocketAddr so we can apply an explicit connect
+        // timeout. Without this, TcpStream::connect waits for the OS default
+        // (~75s on macOS) before failing — terrible UX when the user forgot
+        // to bring up a VPN or the host is firewalled.
+        let resolved = (req.host.as_str(), req.port)
+            .to_socket_addrs()
+            .map_err(|e| JetError::Other(format!("dns resolve {}: {e}", req.host)))?
+            .next()
+            .ok_or_else(|| {
+                JetError::Other(format!("no address resolved for {}", req.host))
+            })?;
+
+        let tcp = TcpStream::connect_timeout(&resolved, TCP_CONNECT_TIMEOUT)
+            .map_err(|e| {
+                JetError::Other(format!(
+                    "tcp connect to {addr_str} timed out / failed ({e}); \
+                     network/VPN/firewall?"
+                ))
+            })?;
+        // Banner/handshake stalls are rarer — keep these moderate.
+        tcp.set_read_timeout(Some(Duration::from_secs(30)))?;
+        tcp.set_write_timeout(Some(Duration::from_secs(30)))?;
 
         let mut session = Session::new()?;
         session.set_tcp_stream(tcp);
@@ -78,14 +100,14 @@ impl SshConnection {
         // Annotate each phase so users see *where* the connection failed.
         session
             .handshake()
-            .map_err(|e| JetError::Other(format!("handshake with {addr}: {e}")))?;
+            .map_err(|e| JetError::Other(format!("handshake with {addr_str}: {e}")))?;
 
         match &req.credential {
             Credential::Password { password } => {
                 session.userauth_password(&req.username, password).map_err(
                     |e| {
                         JetError::Auth(format!(
-                            "password auth ({}@{addr}): {e}",
+                            "password auth ({}@{addr_str}): {e}",
                             req.username
                         ))
                     },
@@ -106,7 +128,7 @@ impl SshConnection {
                     .userauth_pubkey_file(&req.username, None, key, passphrase.as_deref())
                     .map_err(|e| {
                         JetError::Auth(format!(
-                            "pubkey auth ({}@{addr}, key={}): {e}",
+                            "pubkey auth ({}@{addr_str}, key={}): {e}",
                             req.username, private_key_path
                         ))
                     })?;
@@ -115,7 +137,7 @@ impl SshConnection {
 
         if !session.authenticated() {
             return Err(JetError::Auth(format!(
-                "authentication failed for {}@{addr} (server refused credentials)",
+                "authentication failed for {}@{addr_str} (server refused credentials)",
                 req.username
             )));
         }
