@@ -57,45 +57,12 @@ impl SshConnection {
         let mut session = Session::new()?;
         session.set_tcp_stream(tcp);
 
-        // Explicit algorithm preferences. libssh2's defaults can be too narrow
-        // depending on the bundled build (notably on Windows), causing the
-        // handshake to fail against servers that still rely on widely-used
-        // legacy algorithms (e.g. ssh-rsa with SHA-1 host keys). We list the
-        // common modern algorithms first and keep legacy options as fallback
-        // so a plain `ssh user@host` and JetPipe see the same algorithm set.
-        let _ = session.method_pref(
-            MethodType::HostKey,
-            "ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,\
-             rsa-sha2-512,rsa-sha2-256,ssh-rsa,ssh-dss",
-        );
-        let _ = session.method_pref(
-            MethodType::Kex,
-            "curve25519-sha256,curve25519-sha256@libssh.org,\
-             ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,\
-             diffie-hellman-group-exchange-sha256,\
-             diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,\
-             diffie-hellman-group14-sha256,diffie-hellman-group14-sha1",
-        );
-        let _ = session.method_pref(
-            MethodType::CryptCs,
-            "chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,\
-             aes256-ctr,aes192-ctr,aes128-ctr",
-        );
-        let _ = session.method_pref(
-            MethodType::CryptSc,
-            "chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,\
-             aes256-ctr,aes192-ctr,aes128-ctr",
-        );
-        let _ = session.method_pref(
-            MethodType::MacCs,
-            "hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,\
-             hmac-sha2-512,hmac-sha2-256,hmac-sha1",
-        );
-        let _ = session.method_pref(
-            MethodType::MacSc,
-            "hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,\
-             hmac-sha2-512,hmac-sha2-256,hmac-sha1",
-        );
+        // NOTE: Earlier we set explicit method_pref for HostKey/Kex/Cipher/MAC
+        // to force a broad algorithm list, but that turned out to break the
+        // handshake on libssh2 builds that don't ship one of the listed
+        // algorithms — method_pref replaces (not augments) the defaults, so
+        // a partial intersection meant no acceptable algorithms. libssh2's
+        // built-in defaults are already wide enough for any modern server.
 
         if req.compression {
             let _ = session.method_pref(
