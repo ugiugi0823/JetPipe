@@ -35,6 +35,7 @@ export default function App() {
   });
   const [connecting, setConnecting] = useState<PanelSide | null>(null);
   const [showDialog, setShowDialog] = useState(false);
+  const [editingSession, setEditingSession] = useState<SavedSession | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [queue, setQueue] = useState<QueueEntry[]>([]);
   const panelBindings = useRef<Map<PanelSide, PanelBinding>>(new Map());
@@ -133,7 +134,19 @@ export default function App() {
   async function handleNewOrEditSession(s: SavedSession) {
     const items = await upsertSession(s);
     setVault(items);
+    const wasEditing = !!editingSession;
     setShowDialog(false);
+    setEditingSession(null);
+
+    // If the edited session is currently connected to either panel, reconnect
+    // with the new credentials/host so changes take effect immediately.
+    if (wasEditing) {
+      for (const side of ["left", "right"] as PanelSide[]) {
+        if (panelBindings.current.get(side)?.savedId === s.id) {
+          await handleConnect(s, side);
+        }
+      }
+    }
   }
 
   async function handleDeleteSession(id: string) {
@@ -275,8 +288,23 @@ export default function App() {
         vault={vault}
         liveByPanel={liveByPanelForSidebar}
         connectingPanel={connecting}
-        onNewSession={() => setShowDialog(true)}
+        onNewSession={() => {
+          setEditingSession(null);
+          setShowDialog(true);
+        }}
         onImportSshConfig={() => setShowImport(true)}
+        onEditSession={async (s) => {
+          // Pull secrets out of the keychain so the dialog can pre-fill
+          // password / passphrase. Without this the fields would be blank
+          // and saving would wipe the keychain entry.
+          try {
+            const cred = await resolveCredentials(s);
+            setEditingSession({ ...s, credential: cred });
+          } catch {
+            setEditingSession(s);
+          }
+          setShowDialog(true);
+        }}
         onDeleteSession={handleDeleteSession}
         onConnect={handleConnect}
         onDisconnect={handleDisconnect}
@@ -330,7 +358,11 @@ export default function App() {
 
       {showDialog && (
         <ConnectionDialog
-          onCancel={() => setShowDialog(false)}
+          initial={editingSession}
+          onCancel={() => {
+            setShowDialog(false);
+            setEditingSession(null);
+          }}
           onSave={handleNewOrEditSession}
         />
       )}

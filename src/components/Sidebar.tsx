@@ -10,6 +10,7 @@ import {
   FileDown,
   PanelLeftClose,
   PanelLeftOpen,
+  Pencil,
 } from "lucide-react";
 import type { LiveSession, PanelSide, SavedSession } from "../types";
 import { cn } from "../lib/utils";
@@ -20,6 +21,7 @@ interface Props {
   connectingPanel: PanelSide | null;
   onNewSession: () => void;
   onImportSshConfig: () => void;
+  onEditSession: (saved: SavedSession) => void;
   onDeleteSession: (id: string) => void;
   onConnect: (saved: SavedSession, side: PanelSide) => void;
   onDisconnect: (side: PanelSide) => void;
@@ -33,6 +35,7 @@ export default function Sidebar({
   connectingPanel,
   onNewSession,
   onImportSshConfig,
+  onEditSession,
   onDeleteSession,
   onConnect,
   onDisconnect,
@@ -231,9 +234,16 @@ export default function Sidebar({
                     : "right →"}
                 </button>
                 <button
+                  onClick={() => onEditSession(s)}
+                  className="text-zinc-600 hover:text-cyan-300 p-1 transition opacity-0 group-hover:opacity-100"
+                  title="세션 수정"
+                >
+                  <Pencil size={11} />
+                </button>
+                <button
                   onClick={() => onDeleteSession(s.id)}
                   className="text-zinc-600 hover:text-rose-400 p-1 transition opacity-0 group-hover:opacity-100"
-                  title="Delete"
+                  title="삭제"
                 >
                   <Trash2 size={11} />
                 </button>
