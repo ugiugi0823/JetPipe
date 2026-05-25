@@ -5,6 +5,7 @@ import ConnectionDialog from "./components/ConnectionDialog";
 import ImportDialog from "./components/ImportDialog";
 import TransferQueue from "./components/TransferQueue";
 import Splitter from "./components/Splitter";
+import DevConsole from "./components/DevConsole";
 import type { LiveSession, PanelSide, QueueEntry, SavedSession } from "./types";
 import {
   cancelTransfer,
@@ -374,6 +375,8 @@ export default function App() {
           onImport={handleImport}
         />
       )}
+
+      <DevConsole />
     </div>
   );
 }

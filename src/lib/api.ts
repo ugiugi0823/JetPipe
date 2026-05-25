@@ -1,5 +1,21 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke as rawInvoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { logEvent, traceInvoke } from "./devlog";
+
+/** invoke wrapped so every Rust command call is logged into the dev console
+ *  (with timing + error). Hangs become visible as a start event without
+ *  a matching end event. */
+async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
+  const trace = traceInvoke(cmd, args);
+  try {
+    const out = (await rawInvoke<T>(cmd, args)) as T;
+    trace.ok(out);
+    return out;
+  } catch (e) {
+    trace.err(e);
+    throw e;
+  }
+}
 import type {
   Credential,
   LiveSession,
@@ -136,6 +152,7 @@ export async function onEnqueue(
   handler: EnqueueHandler
 ): Promise<UnlistenFn> {
   return listen<RustEnqueue>("transfer:enqueue", (e) => {
+    logEvent(`transfer:enqueue jobId=${e.payload.job_id} files=${e.payload.files.length}`);
     const files: QueueEntry[] = e.payload.files.map((f) => ({
       jobId: e.payload.job_id,
       fileId: f.file_id,
@@ -155,6 +172,9 @@ export async function onFileProgress(
   handler: FileProgressHandler
 ): Promise<UnlistenFn> {
   return listen<RustFileProgress>("transfer:file", (e) => {
+    if (e.payload.status === "done" || e.payload.status === "failed" || e.payload.status === "cancelled") {
+      logEvent(`transfer:file ${e.payload.status} ${e.payload.file_id}`, e.payload.error ?? undefined);
+    }
     handler({
       jobId: e.payload.job_id,
       fileId: e.payload.file_id,
