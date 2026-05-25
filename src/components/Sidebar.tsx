@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { devlog } from "../lib/devlog";
 import {
   Plug,
   Plus,
@@ -196,6 +197,7 @@ export default function Sidebar({
                 <button
                   disabled={connectingPanel !== null}
                   onClick={() => {
+                    devlog.info(`click:connect-left label=${s.label}`);
                     setPendingId(s.id);
                     onConnect(s, "left");
                     setPendingId(null);
@@ -216,6 +218,7 @@ export default function Sidebar({
                 <button
                   disabled={connectingPanel !== null}
                   onClick={() => {
+                    devlog.info(`click:connect-right label=${s.label}`);
                     setPendingId(s.id);
                     onConnect(s, "right");
                     setPendingId(null);

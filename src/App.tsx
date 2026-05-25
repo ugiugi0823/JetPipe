@@ -22,6 +22,7 @@ import {
   upsertSession,
 } from "./lib/vault";
 import { joinPath } from "./lib/utils";
+import { devlog } from "./lib/devlog";
 
 interface PanelBinding {
   liveId: string;
@@ -100,12 +101,22 @@ export default function App() {
   }, []);
 
   async function handleConnect(saved: SavedSession, side: PanelSide) {
+    devlog.info(`handleConnect:start side=${side} label=${saved.label} host=${saved.host}:${saved.port} credKind=${saved.credential.kind}`);
     setConnecting(side);
     try {
       const prior = live[side];
-      if (prior) await disconnect(prior.id).catch(() => {});
+      if (prior) {
+        devlog.info(`handleConnect:disconnect-prior id=${prior.id}`);
+        await disconnect(prior.id).catch((e) =>
+          devlog.warn("disconnect-prior failed", e)
+        );
+      }
 
+      devlog.info("handleConnect:resolveCredentials");
       const credential = await resolveCredentials(saved);
+      devlog.info(`handleConnect:resolveCredentials done kind=${credential.kind}`);
+
+      devlog.info("handleConnect:invoke cmd_connect");
       const ls = await connect({
         host: saved.host,
         port: saved.port,
@@ -113,10 +124,14 @@ export default function App() {
         credential,
         compression: !!saved.compression,
       });
+      devlog.info(`handleConnect:connected liveId=${ls.id} home=${ls.home}`);
+
       setLive((prev) => ({ ...prev, [side]: ls }));
       panelBindings.current.set(side, { liveId: ls.id, savedId: saved.id });
       setBindingTick((t) => t + 1);
+      devlog.info("handleConnect:done");
     } catch (e: any) {
+      devlog.error(`handleConnect:failed ${side}`, e?.message ?? e);
       pushErrorRow(`연결 실패: ${e?.message ?? e}`);
     } finally {
       setConnecting(null);

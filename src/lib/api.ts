@@ -2,13 +2,46 @@ import { invoke as rawInvoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { logEvent, traceInvoke } from "./devlog";
 
+// invoke timeouts: short for read-only / metadata calls so an unresponsive
+// server fails fast instead of locking the UI behind a beachball; long
+// transfers ride their own internal timeouts inside Rust.
+const INVOKE_TIMEOUT_MS: Record<string, number> = {
+  cmd_connect: 45_000,
+  cmd_disconnect: 10_000,
+  cmd_list_dir: 30_000,
+  cmd_mkdir: 15_000,
+  cmd_rename: 15_000,
+  cmd_delete: 60_000,
+  cmd_keychain_get: 8_000,
+  cmd_keychain_set: 8_000,
+  cmd_keychain_delete: 8_000,
+  // Transfers run for arbitrarily long; let Rust manage the lifetime.
+  cmd_pipe_transfer: 0,
+  cmd_cancel_transfer: 5_000,
+};
+
 /** invoke wrapped so every Rust command call is logged into the dev console
- *  (with timing + error). Hangs become visible as a start event without
- *  a matching end event. */
+ *  (with timing + error) and fails after a per-command timeout. Hangs become
+ *  visible as a start event without a matching end event, and the timeout
+ *  guarantees the promise eventually rejects even if Rust is stuck. */
 async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
   const trace = traceInvoke(cmd, args);
+  const timeoutMs = INVOKE_TIMEOUT_MS[cmd] ?? 20_000;
   try {
-    const out = (await rawInvoke<T>(cmd, args)) as T;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const racing: Promise<T>[] = [rawInvoke<T>(cmd, args) as Promise<T>];
+    if (timeoutMs > 0) {
+      racing.push(
+        new Promise<T>((_, reject) => {
+          timer = setTimeout(
+            () => reject(new Error(`${cmd} timed out after ${timeoutMs}ms`)),
+            timeoutMs
+          );
+        })
+      );
+    }
+    const out = await Promise.race(racing);
+    if (timer) clearTimeout(timer);
     trace.ok(out);
     return out;
   } catch (e) {
