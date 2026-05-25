@@ -1,6 +1,6 @@
 [package]
 name = "jetpipe"
-version = "0.1.10"
+version = "0.1.11"
 description = "JetPipe — In-memory streaming SFTP pipeline"
 authors = ["JetPipe"]
 edition = "2021"
@@ -17,14 +17,12 @@ tauri = { version = "2", features = ["devtools"] }
 tauri-plugin-dialog = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-# vendored-openssl statically links a known-good OpenSSL so:
-#   1. libssh2 on Windows can actually parse OpenSSH-format Ed25519
-#      private keys (system libssh2/WinCNG builds reject them with a
-#      bare [Session(-1)] unknown error).
-#   2. cross-compiling to macOS x86_64 from an aarch64 host stops
-#      failing on "Could not find directory of OpenSSL installation".
-# Trade-off: ~3MB bigger binary + slower first-time compile.
 ssh2 = { version = "0.9", features = ["vendored-openssl"] }
+# libssh2-sys's `openssl-on-win32` is REQUIRED for libssh2 to actually use
+# OpenSSL on Windows MSVC. Without it, libssh2 defaults to WinCNG even
+# when openssl-sys is vendored, and OpenSSH-format Ed25519 private keys
+# fail to parse with a bare [Session(-1)] unknown error.
+libssh2-sys = { version = "0.3", features = ["openssl-on-win32"] }
 thiserror = "1"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync"] }
 uuid = { version = "1", features = ["v4", "serde"] }
