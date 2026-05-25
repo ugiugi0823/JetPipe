@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   Ban,
@@ -7,13 +7,21 @@ import {
   XCircle,
   Zap,
   Trash2,
+  CheckSquare,
+  Square,
+  ListChecks,
+  OctagonX,
 } from "lucide-react";
 import type { QueueEntry } from "../types";
 import { cn, formatBytes, formatBytesExact, formatSpeed } from "../lib/utils";
+import ContextMenu, { type ContextMenuItem } from "./ContextMenu";
 
 interface Props {
   entries: QueueEntry[];
   onCancelJob: (jobId: string) => void;
+  onCancelFiles: (fileIds: string[]) => void;
+  onRemoveFiles: (fileIds: string[]) => void;
+  onStopAndClearAll: () => void;
   onClearTab: (tab: TabKey) => void;
 }
 
@@ -30,7 +38,7 @@ const ARROW_WIDTH = 24;
 const DEFAULT_COLS: Record<ColKey, number> = {
   source: 240,
   dest: 240,
-  size: 80,
+  size: 90,
   status: 140,
 };
 const MIN_COL = 50;
@@ -61,10 +69,16 @@ function tabOf(e: QueueEntry): TabKey {
 export default function TransferQueue({
   entries,
   onCancelJob,
+  onCancelFiles,
+  onRemoveFiles,
+  onStopAndClearAll,
   onClearTab,
 }: Props) {
   const [tab, setTab] = useState<TabKey>("queue");
   const [cols, setCols] = useState<Record<ColKey, number>>(() => loadCols());
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  const lastClickedRef = useRef<string | null>(null);
 
   useEffect(() => {
     try {
@@ -86,10 +100,128 @@ export default function TransferQueue({
 
   const visible = buckets[tab];
 
+  // Prune selections that no longer exist (e.g. after removal).
+  useEffect(() => {
+    const live = new Set(entries.map((e) => e.fileId));
+    setSelected((prev) => {
+      let changed = false;
+      const next = new Set<string>();
+      for (const id of prev) {
+        if (live.has(id)) next.add(id);
+        else changed = true;
+      }
+      return changed ? next : prev;
+    });
+  }, [entries]);
+
+  function clickRow(e: React.MouseEvent, id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (e.shiftKey && lastClickedRef.current) {
+        // Range select across the currently visible bucket.
+        const ids = visible.map((v) => v.fileId);
+        const a = ids.indexOf(lastClickedRef.current);
+        const b = ids.indexOf(id);
+        if (a >= 0 && b >= 0) {
+          const [lo, hi] = a < b ? [a, b] : [b, a];
+          for (let i = lo; i <= hi; i++) next.add(ids[i]);
+          return next;
+        }
+      }
+      if (e.metaKey || e.ctrlKey) {
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      }
+      // Plain click → exclusive single selection.
+      next.clear();
+      next.add(id);
+      return next;
+    });
+    lastClickedRef.current = id;
+  }
+
+  function selectAllInTab() {
+    setSelected(new Set(visible.map((v) => v.fileId)));
+  }
+  function clearSelection() {
+    setSelected(new Set());
+  }
+
+  function selectedEntries(): QueueEntry[] {
+    return entries.filter((e) => selected.has(e.fileId));
+  }
+
+  function openContextMenu(e: React.MouseEvent, rowId?: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    // If the clicked row isn't in the selection, replace the selection
+    // with just that row so the menu acts on what the user is pointing at.
+    if (rowId && !selected.has(rowId)) {
+      setSelected(new Set([rowId]));
+      lastClickedRef.current = rowId;
+    }
+    setMenu({ x: e.clientX, y: e.clientY });
+  }
+
+  function buildMenuItems(): ContextMenuItem[] {
+    const sel = selectedEntries();
+    const items: ContextMenuItem[] = [];
+    const activeIds = sel
+      .filter((e) => e.status === "active" || e.status === "queued")
+      .map((e) => e.fileId);
+    const removableIds = sel
+      .filter((e) => e.status !== "active")
+      .map((e) => e.fileId);
+    const hasActive = entries.some(
+      (e) => e.status === "active" || e.status === "queued"
+    );
+
+    if (sel.length > 0) {
+      if (activeIds.length > 0) {
+        items.push({
+          label: `선택 항목 취소 (${activeIds.length}개)`,
+          icon: Ban,
+          onClick: () => onCancelFiles(activeIds),
+        });
+      }
+      if (removableIds.length > 0) {
+        items.push({
+          label: `선택 항목 제거 (${removableIds.length}개)`,
+          icon: Trash2,
+          danger: true,
+          onClick: () => onRemoveFiles(removableIds),
+        });
+      }
+    }
+    items.push({
+      label: visible.length > 0 ? `현재 탭 전체 선택 (${visible.length})` : "전체 선택",
+      icon: ListChecks,
+      onClick: selectAllInTab,
+    });
+    if (selected.size > 0) {
+      items.push({
+        label: "선택 해제",
+        icon: Square,
+        onClick: clearSelection,
+      });
+    }
+    items.push({
+      label: hasActive ? "중지 후 모두 제거" : "모두 제거",
+      icon: OctagonX,
+      danger: true,
+      onClick: onStopAndClearAll,
+    });
+    return items;
+  }
+
   const template = `${cols.source}px ${ARROW_WIDTH}px ${cols.dest}px ${cols.size}px ${cols.status}px`;
 
   return (
-    <div className="border-t border-zinc-900 bg-zinc-950/80 backdrop-blur flex flex-col h-full">
+    <div
+      className="border-t border-zinc-900 bg-zinc-950/80 backdrop-blur flex flex-col h-full"
+      onContextMenu={(e) => openContextMenu(e)}
+    >
       {/* Column headers */}
       <div
         style={{ gridTemplateColumns: template }}
@@ -122,6 +254,9 @@ export default function TransferQueue({
               key={e.fileId}
               entry={e}
               template={template}
+              selected={selected.has(e.fileId)}
+              onClick={(ev) => clickRow(ev, e.fileId)}
+              onContextMenu={(ev) => openContextMenu(ev, e.fileId)}
               onCancelJob={onCancelJob}
             />
           ))
@@ -136,7 +271,10 @@ export default function TransferQueue({
           return (
             <button
               key={t.key}
-              onClick={() => setTab(t.key)}
+              onClick={() => {
+                setTab(t.key);
+                clearSelection();
+              }}
               className={cn(
                 "px-3 py-1.5 text-[11px] transition border-r border-zinc-900",
                 active
@@ -159,6 +297,11 @@ export default function TransferQueue({
           );
         })}
         <div className="flex-1" />
+        {selected.size > 0 && (
+          <span className="px-3 py-1.5 text-[10px] text-cyan-300 font-mono tabular-nums">
+            {selected.size}개 선택
+          </span>
+        )}
         {(tab === "failed" || tab === "done") && buckets[tab].length > 0 && (
           <button
             onClick={() => onClearTab(tab)}
@@ -168,6 +311,15 @@ export default function TransferQueue({
           </button>
         )}
       </div>
+
+      {menu && (
+        <ContextMenu
+          x={menu.x}
+          y={menu.y}
+          items={buildMenuItems()}
+          onClose={() => setMenu(null)}
+        />
+      )}
     </div>
   );
 }
@@ -182,9 +334,7 @@ function HeaderCell({
   onResize?: (dx: number) => void;
 }) {
   return (
-    <div
-      className={cn("relative truncate", align === "right" && "text-right")}
-    >
+    <div className={cn("relative truncate", align === "right" && "text-right")}>
       {label}
       {onResize && <ColResize onDrag={onResize} />}
     </div>
@@ -230,10 +380,16 @@ function ColResize({ onDrag }: { onDrag: (dx: number) => void }) {
 function Row({
   entry,
   template,
+  selected,
+  onClick,
+  onContextMenu,
   onCancelJob,
 }: {
   entry: QueueEntry;
   template: string;
+  selected: boolean;
+  onClick: (e: React.MouseEvent) => void;
+  onContextMenu: (e: React.MouseEvent) => void;
   onCancelJob: (jobId: string) => void;
 }) {
   const pct =
@@ -262,25 +418,32 @@ function Row({
 
   return (
     <div
+      onClick={onClick}
+      onContextMenu={onContextMenu}
       style={{ gridTemplateColumns: template }}
-      className="grid gap-2 px-3 py-1 text-[11px] hover:bg-zinc-900/40 transition relative"
+      className={cn(
+        "grid gap-2 px-3 py-1 text-[11px] transition relative cursor-default select-none",
+        selected
+          ? "bg-cyan-500/15 hover:bg-cyan-500/20"
+          : "hover:bg-zinc-900/40"
+      )}
     >
       <div className="flex items-center gap-1.5 min-w-0">
-        <Icon size={11} className={cn("shrink-0", iconColor)} />
-        <span
-          className="font-mono truncate text-zinc-200"
-          title={entry.source || entry.rel}
-        >
+        <span className="shrink-0 w-3 flex items-center justify-center">
+          {selected ? (
+            <CheckSquare size={10} className="text-cyan-400" />
+          ) : (
+            <Icon size={11} className={cn(iconColor)} />
+          )}
+        </span>
+        <span className="font-mono truncate text-zinc-200" title={entry.source || entry.rel}>
           {entry.rel || entry.source}
         </span>
       </div>
       <div className="flex items-center justify-center text-zinc-600">
         <ArrowRight size={10} />
       </div>
-      <div
-        className="font-mono truncate text-zinc-400 flex items-center"
-        title={entry.dest}
-      >
+      <div className="font-mono truncate text-zinc-400 flex items-center" title={entry.dest}>
         {entry.dest}
       </div>
       <div
@@ -300,7 +463,10 @@ function Row({
               {formatSpeed(entry.bps)}
             </span>
             <button
-              onClick={() => onCancelJob(entry.jobId)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onCancelJob(entry.jobId);
+              }}
               className="text-zinc-500 hover:text-rose-400 transition ml-auto"
               title="이 잡 취소"
             >
@@ -310,16 +476,11 @@ function Row({
         )}
         {status === "done" && <span className="text-emerald-400">완료</span>}
         {status === "failed" && (
-          <span
-            className="text-rose-400 truncate"
-            title={entry.error}
-          >
+          <span className="text-rose-400 truncate" title={entry.error}>
             {entry.error ?? "실패"}
           </span>
         )}
-        {status === "cancelled" && (
-          <span className="text-amber-400">취소됨</span>
-        )}
+        {status === "cancelled" && <span className="text-amber-400">취소됨</span>}
       </div>
 
       {isActive && (

@@ -197,6 +197,36 @@ export default function App() {
     await cancelTransfer(jobId).catch(() => {});
   }
 
+  async function handleCancelFiles(fileIds: string[]) {
+    // We can't cancel a single file mid-job (cancellation is whole-job in
+    // the Rust side), so we cancel every job that contains any of these
+    // files. The sibling files in those jobs become "cancelled" too.
+    const jobIds = new Set<string>();
+    for (const f of fileIds) {
+      const entry = queue.find((q) => q.fileId === f);
+      if (entry) jobIds.add(entry.jobId);
+    }
+    await Promise.all([...jobIds].map((j) => cancelTransfer(j).catch(() => {})));
+  }
+
+  function handleRemoveFiles(fileIds: string[]) {
+    const ids = new Set(fileIds);
+    setQueue((prev) => prev.filter((q) => !ids.has(q.fileId)));
+  }
+
+  async function handleStopAndClearAll() {
+    // Cancel every still-running job, then drop everything from the UI queue.
+    const activeJobIds = new Set(
+      queue
+        .filter((q) => q.status === "active" || q.status === "queued")
+        .map((q) => q.jobId)
+    );
+    await Promise.all(
+      [...activeJobIds].map((j) => cancelTransfer(j).catch(() => {}))
+    );
+    setQueue([]);
+  }
+
   function handleClearTab(tab: "queue" | "failed" | "done") {
     setQueue((prev) =>
       prev.filter((q) => {
@@ -290,6 +320,9 @@ export default function App() {
           <TransferQueue
             entries={queue}
             onCancelJob={handleCancelJob}
+            onCancelFiles={handleCancelFiles}
+            onRemoveFiles={handleRemoveFiles}
+            onStopAndClearAll={handleStopAndClearAll}
             onClearTab={handleClearTab}
           />
         </div>
