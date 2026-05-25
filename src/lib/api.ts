@@ -6,10 +6,10 @@ import { logEvent, traceInvoke } from "./devlog";
 // server fails fast instead of locking the UI behind a beachball; long
 // transfers ride their own internal timeouts inside Rust.
 const INVOKE_TIMEOUT_MS: Record<string, number> = {
-  // 3s TCP connect + ~5s handshake/auth on the Rust side. 12s here is
-  // plenty even on a sluggish server while keeping "host unreachable"
-  // feedback responsive.
-  cmd_connect: 12_000,
+  // 1s TCP connect + ~5s handshake/auth on the Rust side. 8s here
+  // covers the handshake budget while making "host unreachable" feel
+  // near-instant.
+  cmd_connect: 8_000,
   cmd_disconnect: 10_000,
   cmd_list_dir: 30_000,
   cmd_mkdir: 15_000,

@@ -6,11 +6,12 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 /// Time we wait for the TCP three-way handshake before giving up on a
-/// host. Reachable servers — even cross-continent — complete the
-/// handshake well under 1 second, so 3 seconds is generous while still
-/// failing fast when the route is blocked (VPN off, firewall, etc.).
-/// OS defaults would otherwise wait ~75s on macOS / ~21s on Windows.
-const TCP_CONNECT_TIMEOUT: Duration = Duration::from_secs(3);
+/// host. 1s — same-room or VPN-connected servers respond in tens of
+/// ms; anything slower than a second usually means a blocked route
+/// (VPN off, firewall, host down). The OS would otherwise wait ~75s
+/// on macOS / ~21s on Windows. If you hit this on a *legitimately*
+/// slow connection, bump it back to 3s here.
+const TCP_CONNECT_TIMEOUT: Duration = Duration::from_secs(1);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "lowercase")]
