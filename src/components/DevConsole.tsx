@@ -8,7 +8,15 @@ import {
   X,
   Filter,
 } from "lucide-react";
-import { clear, getBuffer, subscribe, type LogEntry, type LogLevel } from "../lib/devlog";
+import {
+  append,
+  clear,
+  getBuffer,
+  loadPersistedLog,
+  subscribe,
+  type LogEntry,
+  type LogLevel,
+} from "../lib/devlog";
 import { cn } from "../lib/utils";
 
 const LEVEL_COLOR: Record<LogLevel, string> = {
@@ -91,6 +99,26 @@ export default function DevConsole() {
     });
   }
 
+  function loadPrevious() {
+    const prev = loadPersistedLog();
+    if (prev.length === 0) {
+      append({ level: "warn", message: "no previous session log found" });
+      return;
+    }
+    append({
+      level: "info",
+      message: `── previous session log (${prev.length} entries) ──`,
+    });
+    for (const e of prev) {
+      append({
+        level: e.level,
+        message: `[prev] ${e.message}`,
+        data: e.data,
+        durationMs: e.durationMs,
+      });
+    }
+  }
+
   function copyAll() {
     const text = visible
       .map((e) => {
@@ -166,6 +194,13 @@ export default function DevConsole() {
               title={autoscroll ? "자동 스크롤 켜짐" : "자동 스크롤 꺼짐"}
             >
               {autoscroll ? <ChevronDown size={10} /> : <ChevronUp size={10} />}
+            </button>
+            <button
+              onClick={loadPrevious}
+              className="text-zinc-500 hover:text-amber-300 transition p-1 text-[10px]"
+              title="이전 세션(freeze 직전) 로그 불러오기"
+            >
+              prev
             </button>
             <button
               onClick={copyAll}
