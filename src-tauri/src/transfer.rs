@@ -545,7 +545,13 @@ pub async fn cmd_pipe_transfer(
         }
     } else if pool.len() > 1 && files.len() > 1 {
         // Directory (multi-file): worker pool drains a shared queue.
-        let queue = Arc::new(Mutex::new(files.clone()));
+        // Files are sorted smallest→largest, but `Vec::pop()` returns the
+        // last element. Reversing here puts the smallest file at the back
+        // so workers grab them first — quick wins land in the queue UI fast
+        // and the big files get the tail end where partial-cancel hurts least.
+        let mut queue_vec = files.clone();
+        queue_vec.reverse();
+        let queue = Arc::new(Mutex::new(queue_vec));
         thread::scope(|s| {
             for (src_p, dst_p) in pool.iter() {
                 let queue = Arc::clone(&queue);
