@@ -436,16 +436,12 @@ function Row({
             <Icon size={11} className={cn(iconColor)} />
           )}
         </span>
-        <span className="font-mono truncate text-zinc-200" title={entry.source || entry.rel}>
-          {entry.rel || entry.source}
-        </span>
+        <PathCell path={entry.rel || entry.source} tone="bright" />
       </div>
       <div className="flex items-center justify-center text-zinc-600">
         <ArrowRight size={10} />
       </div>
-      <div className="font-mono truncate text-zinc-400 flex items-center" title={entry.dest}>
-        {entry.dest}
-      </div>
+      <PathCell path={entry.dest} tone="dim" />
       <div
         className="text-right font-mono text-zinc-500 tabular-nums flex items-center justify-end"
         title={formatBytes(entry.size)}
@@ -491,6 +487,43 @@ function Row({
           />
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Path cell that keeps the basename (filename) always visible and truncates
+ * only the directory portion. Layout:
+ *   [ ...truncated/middle/dir/  ][filename.ext]
+ *                                ^ never truncated
+ *
+ * Plain `truncate` chops off the right end — which for paths means losing
+ * the filename, which is the part you actually need to see. Splitting on
+ * the last `/` and shrinking only the prefix makes wider columns reveal
+ * more directory context while filenames stay readable at any width.
+ */
+function PathCell({
+  path,
+  tone,
+}: {
+  path: string;
+  tone: "bright" | "dim";
+}) {
+  const lastSlash = path.lastIndexOf("/");
+  const dir = lastSlash >= 0 ? path.slice(0, lastSlash + 1) : "";
+  const name = lastSlash >= 0 ? path.slice(lastSlash + 1) : path;
+  const nameColor = tone === "bright" ? "text-zinc-200" : "text-zinc-400";
+  const dirColor = tone === "bright" ? "text-zinc-500" : "text-zinc-600";
+
+  return (
+    <div
+      className="flex items-center min-w-0 font-mono"
+      title={path}
+    >
+      {dir && (
+        <span className={cn("truncate shrink", dirColor)}>{dir}</span>
+      )}
+      <span className={cn("shrink-0", nameColor)}>{name}</span>
     </div>
   );
 }
