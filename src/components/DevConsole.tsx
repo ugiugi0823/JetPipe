@@ -24,8 +24,8 @@ const LEVEL_COLOR: Record<LogLevel, string> = {
   info: "text-zinc-200",
   warn: "text-amber-300",
   error: "text-rose-400",
-  invoke: "text-cyan-300",
-  event: "text-violet-300",
+  invoke: "text-brand",
+  event: "text-brand2",
 };
 
 const LEVEL_BADGE: Record<LogLevel, string> = {
@@ -33,8 +33,8 @@ const LEVEL_BADGE: Record<LogLevel, string> = {
   info: "bg-zinc-800 text-zinc-300",
   warn: "bg-amber-500/20 text-amber-300",
   error: "bg-rose-500/20 text-rose-300",
-  invoke: "bg-cyan-500/15 text-cyan-300",
-  event: "bg-violet-500/15 text-violet-300",
+  invoke: "bg-brand/15 text-brand",
+  event: "bg-brand2/15 text-brand2",
 };
 
 function formatTime(t: number): string {
@@ -138,7 +138,7 @@ export default function DevConsole() {
         className={cn(
           "fixed bottom-3 right-3 z-40 flex items-center gap-1.5 px-2.5 py-1 rounded-md shadow-lg transition border text-[10px] font-mono",
           pendingTraces.length > 0
-            ? "border-cyan-500/50 bg-cyan-500/10 text-cyan-200 animate-pulse"
+            ? "border-brand/50 bg-brand/10 text-brand animate-pulse"
             : "border-zinc-800 bg-zinc-950/90 text-zinc-400 hover:text-zinc-100"
         )}
         title="개발자 콘솔"
@@ -146,7 +146,7 @@ export default function DevConsole() {
         <Terminal size={11} />
         <span>console</span>
         {pendingTraces.length > 0 && (
-          <span className="font-mono tabular-nums text-cyan-300">
+          <span className="font-mono tabular-nums text-brand">
             {pendingTraces.length}
           </span>
         )}
@@ -160,7 +160,7 @@ export default function DevConsole() {
       {open && (
         <div className="fixed inset-x-3 bottom-12 z-40 h-[40vh] min-h-[200px] bg-zinc-950/95 backdrop-blur border border-zinc-800 rounded-lg shadow-2xl flex flex-col">
           <header className="flex items-center gap-2 px-3 py-1.5 border-b border-zinc-900 shrink-0">
-            <Terminal size={12} className="text-cyan-400" />
+            <Terminal size={12} className="text-brand" />
             <span className="text-[11px] font-semibold tracking-tight">
               개발자 콘솔
             </span>
@@ -169,7 +169,7 @@ export default function DevConsole() {
             </span>
             {pendingTraces.length > 0 && (
               <span
-                className="text-[10px] text-cyan-300 font-mono tabular-nums"
+                className="text-[10px] text-brand font-mono tabular-nums"
                 title={pendingTraces.map((p) => p.message).join("\n")}
               >
                 ⟳ {pendingTraces.length} in-flight
@@ -181,14 +181,14 @@ export default function DevConsole() {
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               placeholder="필터…"
-              className="w-40 bg-zinc-900/60 border border-zinc-800 rounded px-1.5 py-0.5 text-[10px] outline-none focus:border-cyan-500/50"
+              className="w-40 bg-zinc-900/60 border border-zinc-800 rounded px-1.5 py-0.5 text-[10px] outline-none focus:border-brand/50"
             />
             <button
               onClick={() => setAutoscroll((v) => !v)}
               className={cn(
                 "text-[10px] px-1.5 py-0.5 rounded border transition",
                 autoscroll
-                  ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-300"
+                  ? "border-brand/40 bg-brand/10 text-brand"
                   : "border-zinc-800 text-zinc-500 hover:text-zinc-300"
               )}
               title={autoscroll ? "자동 스크롤 켜짐" : "자동 스크롤 꺼짐"}

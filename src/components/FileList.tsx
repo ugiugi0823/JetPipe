@@ -165,7 +165,7 @@ export default function FileList({
               className={cn(
                 "group grid grid-cols-[1fr_70px_90px_90px] gap-2 px-2 py-0.5 text-xs transition select-none",
                 dragOverPath === e.path
-                  ? "bg-cyan-500/25 ring-1 ring-inset ring-cyan-500/50"
+                  ? "bg-brand/25 ring-1 ring-inset ring-brand/50"
                   : "hover:bg-zinc-900/60",
                 e.isDir
                   ? "cursor-pointer"
@@ -185,7 +185,7 @@ export default function FileList({
                       ev.stopPropagation();
                       onRename(e.path, e.name);
                     }}
-                    className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-cyan-300 shrink-0 transition"
+                    className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-brand shrink-0 transition"
                     title="이름 변경"
                   >
                     <Pencil size={10} />

@@ -283,7 +283,7 @@ export default function Panel({
     }
   }
 
-  const accent = side === "left" ? "from-cyan-500/20" : "from-violet-500/20";
+  const accent = side === "left" ? "from-brand/20" : "from-brand2/20";
 
   return (
     <section
@@ -292,7 +292,7 @@ export default function Panel({
       onDrop={handleDrop}
       className={cn(
         "flex-1 min-w-0 flex flex-col bg-zinc-950/40 border border-zinc-900 rounded-lg overflow-hidden relative transition",
-        dragOver && "ring-1 ring-inset ring-cyan-500/50 bg-cyan-500/[0.03]"
+        dragOver && "ring-1 ring-inset ring-brand/50 bg-brand/[0.03]"
       )}
     >
       <header
@@ -370,7 +370,7 @@ export default function Panel({
             }}
             disabled={!session}
             spellCheck={false}
-            className="w-full bg-zinc-900/60 border border-zinc-800 rounded pl-2 pr-6 py-0.5 text-[11px] font-mono text-zinc-200 placeholder-zinc-600 outline-none focus:border-cyan-500/50 disabled:text-zinc-700 transition"
+            className="w-full bg-zinc-900/60 border border-zinc-800 rounded pl-2 pr-6 py-0.5 text-[11px] font-mono text-zinc-200 placeholder-zinc-600 outline-none focus:border-brand/50 disabled:text-zinc-700 transition"
             placeholder="/"
           />
           <button
@@ -400,7 +400,7 @@ export default function Panel({
           className={cn(
             "transition p-0.5 rounded shrink-0 disabled:opacity-30",
             compression
-              ? "text-cyan-400 hover:text-cyan-300"
+              ? "text-brand hover:text-brand"
               : "text-zinc-500 hover:text-zinc-100"
           )}
           title={
@@ -472,7 +472,7 @@ export default function Panel({
       </div>
 
       {dragOver && (
-        <div className="pointer-events-none absolute top-2 right-2 px-2.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/40 text-cyan-200 text-[10px] font-medium tracking-wide animate-pulse-glow">
+        <div className="pointer-events-none absolute top-2 right-2 px-2.5 py-1 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] font-medium tracking-wide animate-pulse-glow">
           ⚡ {selected} 로 전송
         </div>
       )}
@@ -573,7 +573,7 @@ function PathHistoryMenu({
             onClick={() => onPick(p)}
             className={`w-full text-left px-3 py-1 text-[11px] font-mono truncate transition ${
               p === current
-                ? "bg-cyan-500/10 text-cyan-200"
+                ? "bg-brand/10 text-brand"
                 : "text-zinc-300 hover:bg-zinc-900"
             }`}
           >

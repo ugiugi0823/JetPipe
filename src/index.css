@@ -2,8 +2,37 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+/* Theme variables. `--brand` is the primary accent (buttons, active
+   states, progress bar leading edge), `--brand2` is the secondary
+   used in gradients/dual highlights. The values are space-separated
+   RGB triplets so Tailwind's `rgb(var(--brand) / <alpha-value>)`
+   trick works for opacity utilities like `bg-brand/10`. */
+
+:root,
+html[data-theme="midnight"] {
+  --brand: 34 211 238;   /* cyan-400 */
+  --brand2: 168 85 247;  /* violet-500 */
   color-scheme: dark;
+}
+
+html[data-theme="ocean"] {
+  --brand: 45 212 191;   /* teal-400 */
+  --brand2: 56 189 248;  /* sky-400 */
+}
+
+html[data-theme="forest"] {
+  --brand: 52 211 153;   /* emerald-400 */
+  --brand2: 163 230 53;  /* lime-400 */
+}
+
+html[data-theme="sunset"] {
+  --brand: 251 146 60;   /* orange-400 */
+  --brand2: 251 113 133; /* rose-400 */
+}
+
+html[data-theme="aurora"] {
+  --brand: 192 132 252;  /* purple-400 */
+  --brand2: 232 121 249; /* fuchsia-400 */
 }
 
 html,
@@ -16,13 +45,13 @@ body,
 body {
   -webkit-font-smoothing: antialiased;
   background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(34, 211, 238, 0.06), transparent 60%),
-    radial-gradient(900px 500px at 110% 10%, rgba(168, 85, 247, 0.05), transparent 55%),
+    radial-gradient(1200px 600px at 10% -10%, rgb(var(--brand) / 0.06), transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, rgb(var(--brand2) / 0.05), transparent 55%),
     #0a0a0b;
 }
 
 ::selection {
-  background: rgba(34, 211, 238, 0.25);
+  background: rgb(var(--brand) / 0.25);
   color: #ecfeff;
 }
 

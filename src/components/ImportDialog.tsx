@@ -66,7 +66,7 @@ export default function ImportDialog({ existing, onCancel, onImport }: Props) {
       <div className="w-[720px] max-h-[85vh] bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl flex flex-col">
         <header className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-900">
           <div className="flex items-center gap-2">
-            <FileText size={14} className="text-cyan-400" />
+            <FileText size={14} className="text-brand" />
             <h2 className="text-sm font-semibold tracking-tight">
               Import from SSH config
             </h2>
@@ -86,7 +86,7 @@ export default function ImportDialog({ existing, onCancel, onImport }: Props) {
               {text === "" && (
                 <button
                   onClick={() => setText(SAMPLE)}
-                  className="text-cyan-400/70 hover:text-cyan-300 normal-case tracking-normal"
+                  className="text-brand/70 hover:text-brand normal-case tracking-normal"
                 >
                   예시 채우기
                 </button>
@@ -147,19 +147,19 @@ export default function ImportDialog({ existing, onCancel, onImport }: Props) {
                         setSelected((p) => ({ ...p, [h.alias]: !p[h.alias] }))
                       }
                       className={`w-full text-left px-4 py-2.5 border-b border-zinc-900/60 transition hover:bg-zinc-900/40 ${
-                        isSelected ? "bg-cyan-500/[0.04]" : ""
+                        isSelected ? "bg-brand/[0.04]" : ""
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         <div
                           className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${
                             isSelected
-                              ? "border-cyan-500 bg-cyan-500/20"
+                              ? "border-brand bg-brand/20"
                               : "border-zinc-700"
                           }`}
                         >
                           {isSelected && (
-                            <Check size={9} className="text-cyan-300" />
+                            <Check size={9} className="text-brand" />
                           )}
                         </div>
                         <span className="text-xs font-medium text-zinc-100 truncate">
@@ -210,7 +210,7 @@ export default function ImportDialog({ existing, onCancel, onImport }: Props) {
             <button
               onClick={handleImport}
               disabled={chosen.length === 0}
-              className="px-3 py-1.5 text-xs rounded bg-cyan-500 hover:bg-cyan-400 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-950 font-medium transition"
+              className="px-3 py-1.5 text-xs rounded bg-brand hover:bg-brand disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-950 font-medium transition"
             >
               Import {chosen.length > 0 ? `(${chosen.length})` : ""}
             </button>

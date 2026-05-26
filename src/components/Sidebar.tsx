@@ -12,7 +12,9 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Pencil,
+  Settings,
 } from "lucide-react";
+import SettingsDialog from "./SettingsDialog";
 import type { LiveSession, PanelSide, SavedSession } from "../types";
 import { cn } from "../lib/utils";
 
@@ -42,6 +44,7 @@ export default function Sidebar({
   onDisconnect,
 }: Props) {
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try {
       return localStorage.getItem(COLLAPSE_KEY) === "1";
@@ -65,7 +68,7 @@ export default function Sidebar({
   if (collapsed) {
     return (
       <aside className="w-11 shrink-0 border-r border-zinc-900/80 bg-zinc-950/40 backdrop-blur flex flex-col items-center py-3 gap-1">
-        <div className="w-7 h-7 rounded-md bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center text-zinc-950 font-bold mb-1">
+        <div className="w-7 h-7 rounded-md bg-gradient-to-br from-brand to-brand2 flex items-center justify-center text-zinc-950 font-bold mb-1">
           J
         </div>
         <button
@@ -96,6 +99,13 @@ export default function Sidebar({
         >
           <FileDown size={14} />
         </button>
+        <button
+          onClick={() => setShowSettings(true)}
+          className="text-zinc-500 hover:text-zinc-100 p-1.5 rounded transition"
+          title="설정"
+        >
+          <Settings size={14} />
+        </button>
         <div className="flex-1" />
         <div
           className="text-[9px] font-mono text-zinc-600 tabular-nums"
@@ -103,6 +113,9 @@ export default function Sidebar({
         >
           {vault.length}
         </div>
+        {showSettings && (
+          <SettingsDialog onClose={() => setShowSettings(false)} />
+        )}
       </aside>
     );
   }
@@ -111,7 +124,7 @@ export default function Sidebar({
     <aside className="w-72 shrink-0 border-r border-zinc-900/80 bg-zinc-950/40 backdrop-blur flex flex-col">
       <header className="px-4 pt-5 pb-3 flex items-start justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-md bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center text-zinc-950 font-bold">
+          <div className="w-7 h-7 rounded-md bg-gradient-to-br from-brand to-brand2 flex items-center justify-center text-zinc-950 font-bold">
             J
           </div>
           <div>
@@ -168,7 +181,7 @@ export default function Sidebar({
               className={cn(
                 "group rounded-md border px-2.5 py-2 transition",
                 live
-                  ? "border-cyan-500/40 bg-cyan-500/5"
+                  ? "border-brand/40 bg-brand/5"
                   : "border-transparent hover:border-zinc-800 hover:bg-zinc-900/50"
               )}
             >
@@ -177,7 +190,7 @@ export default function Sidebar({
                   size={14}
                   className={cn(
                     "shrink-0",
-                    live ? "text-cyan-400" : "text-zinc-500"
+                    live ? "text-brand" : "text-zinc-500"
                   )}
                 />
                 <div className="min-w-0 flex-1">
@@ -206,7 +219,7 @@ export default function Sidebar({
                   className={cn(
                     "flex-1 text-[10px] px-1.5 py-1 rounded transition border",
                     liveByPanel.left?.id === s.id
-                      ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-300"
+                      ? "border-brand/40 bg-brand/10 text-brand"
                       : "border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900 text-zinc-400"
                   )}
                 >
@@ -228,7 +241,7 @@ export default function Sidebar({
                   className={cn(
                     "flex-1 text-[10px] px-1.5 py-1 rounded transition border",
                     liveByPanel.right?.id === s.id
-                      ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-300"
+                      ? "border-brand/40 bg-brand/10 text-brand"
                       : "border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900 text-zinc-400"
                   )}
                 >
@@ -240,7 +253,7 @@ export default function Sidebar({
                 </button>
                 <button
                   onClick={() => onEditSession(s)}
-                  className="text-zinc-600 hover:text-cyan-300 p-1 transition opacity-0 group-hover:opacity-100"
+                  className="text-zinc-600 hover:text-brand p-1 transition opacity-0 group-hover:opacity-100"
                   title="세션 수정"
                 >
                   <Pencil size={11} />
@@ -271,7 +284,7 @@ export default function Sidebar({
                   size={10}
                   className={cn(
                     "shrink-0",
-                    side === "left" ? "rotate-180 text-cyan-400/70" : "text-violet-400/70"
+                    side === "left" ? "rotate-180 text-brand/70" : "text-brand2/70"
                   )}
                 />
                 <span className="text-zinc-500 uppercase tracking-wider">
@@ -297,7 +310,18 @@ export default function Sidebar({
             </div>
           );
         })}
+        <button
+          onClick={() => setShowSettings(true)}
+          className="w-full mt-1 flex items-center gap-1.5 px-1.5 py-1 rounded text-[10px] text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/50 transition"
+          title="테마 / 설정"
+        >
+          <Settings size={11} />
+          <span>설정 / 테마</span>
+        </button>
       </footer>
+      {showSettings && (
+        <SettingsDialog onClose={() => setShowSettings(false)} />
+      )}
     </aside>
   );
 }

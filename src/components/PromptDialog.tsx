@@ -85,7 +85,7 @@ export default function PromptDialog({
               if (e.key === "Escape") onCancel();
             }}
             spellCheck={false}
-            className="w-full bg-zinc-900/60 border border-zinc-800 rounded px-2.5 py-1.5 text-xs font-mono text-zinc-100 outline-none focus:border-cyan-500/50 transition"
+            className="w-full bg-zinc-900/60 border border-zinc-800 rounded px-2.5 py-1.5 text-xs font-mono text-zinc-100 outline-none focus:border-brand/50 transition"
           />
           {error && (
             <div className="text-[10px] text-rose-400 font-mono break-all pt-1">
@@ -104,7 +104,7 @@ export default function PromptDialog({
           <button
             type="submit"
             disabled={busy || !value.trim()}
-            className="px-3 py-1.5 text-xs rounded bg-cyan-500 hover:bg-cyan-400 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-950 font-medium transition"
+            className="px-3 py-1.5 text-xs rounded bg-brand hover:bg-brand disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-950 font-medium transition"
           >
             {busy ? "처리 중…" : confirmText}
           </button>

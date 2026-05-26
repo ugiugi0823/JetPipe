@@ -77,7 +77,7 @@ export default function ConfirmDialog({
             className={`px-3 py-1.5 text-xs rounded font-medium transition disabled:opacity-50 ${
               danger
                 ? "bg-rose-500 hover:bg-rose-400 text-zinc-950"
-                : "bg-cyan-500 hover:bg-cyan-400 text-zinc-950"
+                : "bg-brand hover:bg-brand text-zinc-950"
             }`}
           >
             {busy ? "처리 중…" : confirmText}

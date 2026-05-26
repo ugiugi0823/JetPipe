@@ -180,9 +180,9 @@ export default function TreeView({
           className={cn(
             "group flex items-center gap-1 px-1 py-0.5 text-xs cursor-pointer select-none transition rounded",
             dragOverPath === node.path
-              ? "bg-cyan-500/25 text-cyan-50 ring-1 ring-inset ring-cyan-500/50"
+              ? "bg-brand/25 text-brand ring-1 ring-inset ring-brand/50"
               : isSelected
-              ? "bg-cyan-500/15 text-cyan-100"
+              ? "bg-brand/15 text-brand"
               : "hover:bg-zinc-900/60 text-zinc-300"
           )}
           style={{ paddingLeft: 4 + depth * 14 }}
@@ -216,7 +216,7 @@ export default function TreeView({
                 e.stopPropagation();
                 onRename(node.path, node.name);
               }}
-              className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-cyan-300 shrink-0 transition"
+              className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-brand shrink-0 transition"
               title="이름 변경"
             >
               <Pencil size={10} />

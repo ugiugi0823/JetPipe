@@ -123,7 +123,7 @@ export default function ConnectionDialog({ initial, onCancel, onSave }: Props) {
                 onClick={() => setAuthKind(k)}
                 className={`px-2.5 py-1 rounded text-[11px] transition border ${
                   authKind === k
-                    ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-300"
+                    ? "border-brand/40 bg-brand/10 text-brand"
                     : "border-zinc-800 text-zinc-500 hover:text-zinc-300"
                 }`}
               >
@@ -137,7 +137,7 @@ export default function ConnectionDialog({ initial, onCancel, onSave }: Props) {
               type="checkbox"
               checked={compression}
               onChange={(e) => setCompression(e.target.checked)}
-              className="accent-cyan-500"
+              className="accent-brand"
             />
             <span className="text-[11px] text-zinc-300">
               SSH 압축 사용 (zlib)
@@ -199,7 +199,7 @@ export default function ConnectionDialog({ initial, onCancel, onSave }: Props) {
           </button>
           <button
             type="submit"
-            className="px-3 py-1.5 text-xs rounded bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-medium transition"
+            className="px-3 py-1.5 text-xs rounded bg-brand hover:bg-brand text-zinc-950 font-medium transition"
           >
             Save
           </button>
@@ -210,7 +210,7 @@ export default function ConnectionDialog({ initial, onCancel, onSave }: Props) {
 }
 
 const inputCls =
-  "w-full bg-zinc-900/60 border border-zinc-800 rounded px-2.5 py-1.5 text-xs text-zinc-100 placeholder-zinc-600 outline-none focus:border-cyan-500/50 transition";
+  "w-full bg-zinc-900/60 border border-zinc-800 rounded px-2.5 py-1.5 text-xs text-zinc-100 placeholder-zinc-600 outline-none focus:border-brand/50 transition";
 
 function Field({
   label,

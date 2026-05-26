@@ -287,7 +287,7 @@ export default function TransferQueue({
                 <span
                   className={cn(
                     "ml-1.5 text-[9px] tabular-nums",
-                    active ? "text-cyan-400" : "text-zinc-600"
+                    active ? "text-brand" : "text-zinc-600"
                   )}
                 >
                   {count}
@@ -298,7 +298,7 @@ export default function TransferQueue({
         })}
         <div className="flex-1" />
         {selected.size > 0 && (
-          <span className="px-3 py-1.5 text-[10px] text-cyan-300 font-mono tabular-nums">
+          <span className="px-3 py-1.5 text-[10px] text-brand font-mono tabular-nums">
             {selected.size}개 선택
           </span>
         )}
@@ -372,7 +372,7 @@ function ColResize({ onDrag }: { onDrag: (dx: number) => void }) {
       onPointerDown={onDown}
       className="absolute -right-1 top-0 bottom-0 w-2 cursor-col-resize z-10 group flex justify-center"
     >
-      <div className="w-px h-full bg-zinc-800 group-hover:bg-cyan-500/60 group-active:bg-cyan-500 transition" />
+      <div className="w-px h-full bg-zinc-800 group-hover:bg-brand/60 group-active:bg-brand transition" />
     </div>
   );
 }
@@ -412,7 +412,7 @@ function Row({
     done: "text-emerald-400",
     failed: "text-rose-400",
     cancelled: "text-amber-400",
-    active: "text-cyan-400 animate-pulse",
+    active: "text-brand animate-pulse",
     queued: "text-zinc-500",
   }[status];
 
@@ -424,14 +424,14 @@ function Row({
       className={cn(
         "grid gap-2 px-3 py-1 text-[11px] transition relative cursor-default select-none",
         selected
-          ? "bg-cyan-500/15 hover:bg-cyan-500/20"
+          ? "bg-brand/15 hover:bg-brand/20"
           : "hover:bg-zinc-900/40"
       )}
     >
       <div className="flex items-center gap-1.5 min-w-0">
         <span className="shrink-0 w-3 flex items-center justify-center">
           {selected ? (
-            <CheckSquare size={10} className="text-cyan-400" />
+            <CheckSquare size={10} className="text-brand" />
           ) : (
             <Icon size={11} className={cn(iconColor)} />
           )}
@@ -456,7 +456,7 @@ function Row({
         {status === "queued" && <span className="text-zinc-500">대기</span>}
         {isActive && (
           <>
-            <span className="text-cyan-300 font-mono tabular-nums">
+            <span className="text-brand font-mono tabular-nums">
               {Math.floor(pct)}%
             </span>
             <span className="text-zinc-500 font-mono tabular-nums truncate">
@@ -486,7 +486,7 @@ function Row({
       {isActive && (
         <div className="absolute left-0 right-0 bottom-0 h-[2px] bg-zinc-900">
           <div
-            className="h-full bg-gradient-to-r from-cyan-400 to-violet-500 transition-all duration-150"
+            className="h-full bg-gradient-to-r from-brand to-brand2 transition-all duration-150"
             style={{ width: `${pct}%` }}
           />
         </div>

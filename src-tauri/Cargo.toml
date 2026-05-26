@@ -1,6 +1,6 @@
 [package]
 name = "jetpipe"
-version = "0.1.11"
+version = "0.1.12"
 description = "JetPipe — In-memory streaming SFTP pipeline"
 authors = ["JetPipe"]
 edition = "2021"
