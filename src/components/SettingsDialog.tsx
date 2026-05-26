@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import {
   ArrowLeft,
   Check,
@@ -19,7 +20,11 @@ type View = "menu" | "theme";
 export default function SettingsDialog({ onClose }: Props) {
   const [view, setView] = useState<View>("menu");
 
-  return (
+  // Render through a portal so the modal escapes the sidebar's
+  // `backdrop-blur` ancestor — `backdrop-filter` creates a containing
+  // block for `position: fixed`, otherwise pinning the modal inside
+  // the sidebar instead of the viewport.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="w-[460px] bg-base border border-edge rounded-xl shadow-2xl">
         <header className="flex items-center gap-2 px-5 py-3 border-b border-edge">
@@ -62,7 +67,8 @@ export default function SettingsDialog({ onClose }: Props) {
           </button>
         </footer>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
