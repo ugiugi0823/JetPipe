@@ -47,7 +47,7 @@ export default function Splitter({ orientation = "horizontal", onDrag }: Props) 
   return (
     <div
       onPointerDown={handlePointerDown}
-      className={`${sizeCls} ${cursor} bg-zinc-900 hover:bg-brand/40 active:bg-brand/60 transition shrink-0`}
+      className={`${sizeCls} ${cursor} bg-surface hover:bg-brand/40 active:bg-brand/60 transition shrink-0`}
     />
   );
 }

@@ -49,7 +49,7 @@ export default function ContextMenu({ x, y, items, onClose }: Props) {
     <div
       ref={ref}
       style={{ top, left }}
-      className="fixed z-[60] min-w-[170px] bg-zinc-950 border border-zinc-800 rounded-md shadow-2xl py-1"
+      className="fixed z-[60] min-w-[170px] bg-base border border-edge rounded-md shadow-2xl py-1"
       onContextMenu={(e) => e.preventDefault()}
     >
       {items.map((item, i) => {
@@ -64,7 +64,7 @@ export default function ContextMenu({ x, y, items, onClose }: Props) {
             className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left transition ${
               item.danger
                 ? "text-rose-400 hover:bg-rose-500/10"
-                : "text-zinc-200 hover:bg-zinc-800/80"
+                : "text-ink hover:bg-surface/80"
             }`}
           >
             {Icon && <Icon size={11} className="shrink-0" />}

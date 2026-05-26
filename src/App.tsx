@@ -299,7 +299,7 @@ export default function App() {
   };
 
   return (
-    <div className="h-screen w-screen flex bg-zinc-950 text-zinc-100 overflow-hidden">
+    <div className="h-screen w-screen flex bg-base text-ink overflow-hidden">
       <Sidebar
         vault={vault}
         liveByPanel={liveByPanelForSidebar}

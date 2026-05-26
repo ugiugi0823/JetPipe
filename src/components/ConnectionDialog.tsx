@@ -60,16 +60,16 @@ export default function ConnectionDialog({ initial, onCancel, onSave }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <form
         onSubmit={submit}
-        className="w-[440px] bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl"
+        className="w-[440px] bg-base border border-edge rounded-xl shadow-2xl"
       >
-        <header className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-900">
+        <header className="flex items-center justify-between px-5 py-3.5 border-b border-edge">
           <h2 className="text-sm font-semibold tracking-tight">
             {initial ? "Edit Session" : "New Session"}
           </h2>
           <button
             type="button"
             onClick={onCancel}
-            className="text-zinc-500 hover:text-zinc-200 transition"
+            className="text-ink-faint hover:text-ink transition"
           >
             <X size={16} />
           </button>
@@ -124,7 +124,7 @@ export default function ConnectionDialog({ initial, onCancel, onSave }: Props) {
                 className={`px-2.5 py-1 rounded text-[11px] transition border ${
                   authKind === k
                     ? "border-brand/40 bg-brand/10 text-brand"
-                    : "border-zinc-800 text-zinc-500 hover:text-zinc-300"
+                    : "border-edge text-ink-faint hover:text-ink-muted"
                 }`}
               >
                 {k === "key" ? "Private Key" : "Password"}
@@ -139,10 +139,10 @@ export default function ConnectionDialog({ initial, onCancel, onSave }: Props) {
               onChange={(e) => setCompression(e.target.checked)}
               className="accent-brand"
             />
-            <span className="text-[11px] text-zinc-300">
+            <span className="text-[11px] text-ink-muted">
               SSH 압축 사용 (zlib)
             </span>
-            <span className="text-[10px] text-zinc-600">
+            <span className="text-[10px] text-ink-faint">
               텍스트/코드엔 효과적, 이미 압축된 파일(.pt, .safetensors, 영상)엔
               비추천
             </span>
@@ -170,7 +170,7 @@ export default function ConnectionDialog({ initial, onCancel, onSave }: Props) {
                   <button
                     type="button"
                     onClick={pickKey}
-                    className="px-2 rounded border border-zinc-800 hover:bg-zinc-900 text-zinc-400 transition"
+                    className="px-2 rounded border border-edge hover:bg-surface text-ink-muted transition"
                     title="Browse"
                   >
                     <FolderKey size={14} />
@@ -189,11 +189,11 @@ export default function ConnectionDialog({ initial, onCancel, onSave }: Props) {
           )}
         </div>
 
-        <footer className="px-5 py-3.5 border-t border-zinc-900 flex justify-end gap-2">
+        <footer className="px-5 py-3.5 border-t border-edge flex justify-end gap-2">
           <button
             type="button"
             onClick={onCancel}
-            className="px-3 py-1.5 text-xs rounded border border-zinc-800 text-zinc-400 hover:text-zinc-100 transition"
+            className="px-3 py-1.5 text-xs rounded border border-edge text-ink-muted hover:text-ink transition"
           >
             Cancel
           </button>
@@ -210,7 +210,7 @@ export default function ConnectionDialog({ initial, onCancel, onSave }: Props) {
 }
 
 const inputCls =
-  "w-full bg-zinc-900/60 border border-zinc-800 rounded px-2.5 py-1.5 text-xs text-zinc-100 placeholder-zinc-600 outline-none focus:border-brand/50 transition";
+  "w-full bg-surface/60 border border-edge rounded px-2.5 py-1.5 text-xs text-ink placeholder-ink-faint outline-none focus:border-brand/50 transition";
 
 function Field({
   label,
@@ -223,7 +223,7 @@ function Field({
 }) {
   return (
     <label className={`block ${className}`}>
-      <div className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1">
+      <div className="text-[10px] uppercase tracking-wider text-ink-faint mb-1">
         {label}
       </div>
       {children}

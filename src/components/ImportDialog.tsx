@@ -63,8 +63,8 @@ export default function ImportDialog({ existing, onCancel, onImport }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-[720px] max-h-[85vh] bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl flex flex-col">
-        <header className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-900">
+      <div className="w-[720px] max-h-[85vh] bg-base border border-edge rounded-xl shadow-2xl flex flex-col">
+        <header className="flex items-center justify-between px-5 py-3.5 border-b border-edge">
           <div className="flex items-center gap-2">
             <FileText size={14} className="text-brand" />
             <h2 className="text-sm font-semibold tracking-tight">
@@ -73,15 +73,15 @@ export default function ImportDialog({ existing, onCancel, onImport }: Props) {
           </div>
           <button
             onClick={onCancel}
-            className="text-zinc-500 hover:text-zinc-200 transition"
+            className="text-ink-faint hover:text-ink transition"
           >
             <X size={16} />
           </button>
         </header>
 
         <div className="flex-1 min-h-0 flex">
-          <div className="w-1/2 border-r border-zinc-900 flex flex-col">
-            <div className="px-4 py-2 text-[10px] uppercase tracking-wider text-zinc-500 border-b border-zinc-900 flex items-center justify-between">
+          <div className="w-1/2 border-r border-edge flex flex-col">
+            <div className="px-4 py-2 text-[10px] uppercase tracking-wider text-ink-faint border-b border-edge flex items-center justify-between">
               <span>~/.ssh/config 내용 붙여넣기</span>
               {text === "" && (
                 <button
@@ -97,12 +97,12 @@ export default function ImportDialog({ existing, onCancel, onImport }: Props) {
               onChange={(e) => setText(e.target.value)}
               placeholder={SAMPLE}
               spellCheck={false}
-              className="flex-1 bg-transparent text-xs font-mono text-zinc-200 placeholder-zinc-700 p-4 outline-none resize-none"
+              className="flex-1 bg-transparent text-xs font-mono text-ink placeholder-ink-faint p-4 outline-none resize-none"
             />
           </div>
 
           <div className="w-1/2 flex flex-col">
-            <div className="px-4 py-2 text-[10px] uppercase tracking-wider text-zinc-500 border-b border-zinc-900 flex items-center justify-between">
+            <div className="px-4 py-2 text-[10px] uppercase tracking-wider text-ink-faint border-b border-edge flex items-center justify-between">
               <span>파싱 결과 ({hosts.length})</span>
               {hosts.length > 0 && (
                 <div className="flex gap-2 normal-case tracking-normal">
@@ -112,7 +112,7 @@ export default function ImportDialog({ existing, onCancel, onImport }: Props) {
                         Object.fromEntries(hosts.map((h) => [h.alias, true]))
                       )
                     }
-                    className="text-zinc-400 hover:text-zinc-100"
+                    className="text-ink-muted hover:text-ink"
                   >
                     전체
                   </button>
@@ -122,7 +122,7 @@ export default function ImportDialog({ existing, onCancel, onImport }: Props) {
                         Object.fromEntries(hosts.map((h) => [h.alias, false]))
                       )
                     }
-                    className="text-zinc-400 hover:text-zinc-100"
+                    className="text-ink-muted hover:text-ink"
                   >
                     해제
                   </button>
@@ -131,7 +131,7 @@ export default function ImportDialog({ existing, onCancel, onImport }: Props) {
             </div>
             <div className="flex-1 overflow-y-auto">
               {hosts.length === 0 ? (
-                <div className="h-full flex items-center justify-center text-xs text-zinc-600 px-6 text-center">
+                <div className="h-full flex items-center justify-center text-xs text-ink-faint px-6 text-center">
                   왼쪽에 SSH config를 붙여넣으면
                   <br />
                   Host 블록이 자동으로 파싱됩니다
@@ -146,7 +146,7 @@ export default function ImportDialog({ existing, onCancel, onImport }: Props) {
                       onClick={() =>
                         setSelected((p) => ({ ...p, [h.alias]: !p[h.alias] }))
                       }
-                      className={`w-full text-left px-4 py-2.5 border-b border-zinc-900/60 transition hover:bg-zinc-900/40 ${
+                      className={`w-full text-left px-4 py-2.5 border-b border-edge/60 transition hover:bg-surface/40 ${
                         isSelected ? "bg-brand/[0.04]" : ""
                       }`}
                     >
@@ -155,20 +155,20 @@ export default function ImportDialog({ existing, onCancel, onImport }: Props) {
                           className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${
                             isSelected
                               ? "border-brand bg-brand/20"
-                              : "border-zinc-700"
+                              : "border-edge"
                           }`}
                         >
                           {isSelected && (
                             <Check size={9} className="text-brand" />
                           )}
                         </div>
-                        <span className="text-xs font-medium text-zinc-100 truncate">
+                        <span className="text-xs font-medium text-ink truncate">
                           {h.alias}
                         </span>
                         {h.identityFile ? (
-                          <KeyRound size={10} className="text-zinc-500" />
+                          <KeyRound size={10} className="text-ink-faint" />
                         ) : (
-                          <Lock size={10} className="text-zinc-500" />
+                          <Lock size={10} className="text-ink-faint" />
                         )}
                         {exists && (
                           <span className="ml-auto text-[9px] text-amber-400/80 uppercase tracking-wider">
@@ -176,13 +176,13 @@ export default function ImportDialog({ existing, onCancel, onImport }: Props) {
                           </span>
                         )}
                       </div>
-                      <div className="mt-1 ml-5.5 text-[10px] font-mono text-zinc-500 truncate">
+                      <div className="mt-1 ml-5.5 text-[10px] font-mono text-ink-faint truncate">
                         {h.user ? `${h.user}@` : ""}
                         {h.hostName}
                         {h.port !== 22 ? `:${h.port}` : ""}
                       </div>
                       {h.identityFile && (
-                        <div className="ml-5.5 text-[10px] font-mono text-zinc-600 truncate">
+                        <div className="ml-5.5 text-[10px] font-mono text-ink-faint truncate">
                           {h.identityFile}
                         </div>
                       )}
@@ -194,8 +194,8 @@ export default function ImportDialog({ existing, onCancel, onImport }: Props) {
           </div>
         </div>
 
-        <footer className="px-5 py-3.5 border-t border-zinc-900 flex items-center justify-between">
-          <div className="text-[11px] text-zinc-500">
+        <footer className="px-5 py-3.5 border-t border-edge flex items-center justify-between">
+          <div className="text-[11px] text-ink-faint">
             {chosen.length > 0
               ? `${chosen.length}개 세션이 추가됩니다`
               : "선택된 세션이 없습니다"}
@@ -203,14 +203,14 @@ export default function ImportDialog({ existing, onCancel, onImport }: Props) {
           <div className="flex gap-2">
             <button
               onClick={onCancel}
-              className="px-3 py-1.5 text-xs rounded border border-zinc-800 text-zinc-400 hover:text-zinc-100 transition"
+              className="px-3 py-1.5 text-xs rounded border border-edge text-ink-muted hover:text-ink transition"
             >
               Cancel
             </button>
             <button
               onClick={handleImport}
               disabled={chosen.length === 0}
-              className="px-3 py-1.5 text-xs rounded bg-brand hover:bg-brand disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-950 font-medium transition"
+              className="px-3 py-1.5 text-xs rounded bg-brand hover:bg-brand disabled:bg-surface disabled:text-ink-faint text-zinc-950 font-medium transition"
             >
               Import {chosen.length > 0 ? `(${chosen.length})` : ""}
             </button>

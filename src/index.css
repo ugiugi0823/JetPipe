@@ -8,31 +8,70 @@
    RGB triplets so Tailwind's `rgb(var(--brand) / <alpha-value>)`
    trick works for opacity utilities like `bg-brand/10`. */
 
+/* Each theme defines a full palette: --bg/--surface/--border for chrome,
+ * --text/--text-muted/--text-faint for type, --brand/--brand2 for accents.
+ * Values are space-separated RGB so Tailwind opacity modifiers (`/40`)
+ * still work via rgb(var(...) / <alpha-value>). */
+
 :root,
 html[data-theme="midnight"] {
-  --brand: 34 211 238;   /* cyan-400 */
-  --brand2: 168 85 247;  /* violet-500 */
+  --bg: 10 10 11;
+  --surface: 24 24 27;
+  --border: 39 39 42;
+  --text: 244 244 245;
+  --text-muted: 161 161 170;
+  --text-faint: 113 113 122;
+  --brand: 34 211 238;
+  --brand2: 168 85 247;
   color-scheme: dark;
 }
 
-html[data-theme="ocean"] {
-  --brand: 45 212 191;   /* teal-400 */
-  --brand2: 56 189 248;  /* sky-400 */
-}
-
 html[data-theme="forest"] {
-  --brand: 52 211 153;   /* emerald-400 */
-  --brand2: 163 230 53;  /* lime-400 */
+  --bg: 8 14 12;
+  --surface: 20 30 26;
+  --border: 38 52 46;
+  --text: 230 248 240;
+  --text-muted: 156 176 168;
+  --text-faint: 110 130 122;
+  --brand: 52 211 153;
+  --brand2: 163 230 53;
+  color-scheme: dark;
 }
 
 html[data-theme="sunset"] {
-  --brand: 251 146 60;   /* orange-400 */
-  --brand2: 251 113 133; /* rose-400 */
+  --bg: 20 12 9;
+  --surface: 36 24 20;
+  --border: 60 42 35;
+  --text: 250 240 232;
+  --text-muted: 180 158 145;
+  --text-faint: 130 110 100;
+  --brand: 251 146 60;
+  --brand2: 251 113 133;
+  color-scheme: dark;
 }
 
-html[data-theme="aurora"] {
-  --brand: 192 132 252;  /* purple-400 */
-  --brand2: 232 121 249; /* fuchsia-400 */
+html[data-theme="daylight"] {
+  --bg: 250 250 250;
+  --surface: 244 244 245;
+  --border: 228 228 231;
+  --text: 24 24 27;
+  --text-muted: 82 82 91;
+  --text-faint: 113 113 122;
+  --brand: 6 182 212;
+  --brand2: 124 58 237;
+  color-scheme: light;
+}
+
+html[data-theme="paper"] {
+  --bg: 250 246 238;
+  --surface: 243 237 226;
+  --border: 224 215 198;
+  --text: 41 37 30;
+  --text-muted: 99 90 76;
+  --text-faint: 137 125 109;
+  --brand: 217 119 6;
+  --brand2: 219 39 119;
+  color-scheme: light;
 }
 
 html,
@@ -47,7 +86,8 @@ body {
   background:
     radial-gradient(1200px 600px at 10% -10%, rgb(var(--brand) / 0.06), transparent 60%),
     radial-gradient(900px 500px at 110% 10%, rgb(var(--brand2) / 0.05), transparent 55%),
-    #0a0a0b;
+    rgb(var(--bg));
+  color: rgb(var(--text));
 }
 
 ::selection {

@@ -291,37 +291,37 @@ export default function Panel({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={cn(
-        "flex-1 min-w-0 flex flex-col bg-zinc-950/40 border border-zinc-900 rounded-lg overflow-hidden relative transition",
+        "flex-1 min-w-0 flex flex-col bg-base/40 border border-edge rounded-lg overflow-hidden relative transition",
         dragOver && "ring-1 ring-inset ring-brand/50 bg-brand/[0.03]"
       )}
     >
       <header
         className={cn(
-          "flex items-center gap-2 px-3 py-1.5 border-b border-zinc-900 bg-gradient-to-r to-transparent shrink-0",
+          "flex items-center gap-2 px-3 py-1.5 border-b border-edge bg-gradient-to-r to-transparent shrink-0",
           accent
         )}
       >
-        <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium">
+        <span className="text-[10px] uppercase tracking-wider text-ink-faint font-medium">
           {side}
         </span>
         {session ? (
-          <span className="text-[11px] font-mono text-zinc-300 truncate">
+          <span className="text-[11px] font-mono text-ink-muted truncate">
             {session.username}@{session.host}
           </span>
         ) : (
-          <span className="text-[11px] text-zinc-600">미연결</span>
+          <span className="text-[11px] text-ink-faint">미연결</span>
         )}
       </header>
 
       {/* Path bar — single source of truth for selected directory */}
-      <div className="flex items-center gap-1 px-3 py-1.5 border-b border-zinc-900 bg-zinc-950/60 shrink-0">
-        <span className="text-[10px] uppercase tracking-wider text-zinc-500 shrink-0 mr-1">
+      <div className="flex items-center gap-1 px-3 py-1.5 border-b border-edge bg-base/60 shrink-0">
+        <span className="text-[10px] uppercase tracking-wider text-ink-faint shrink-0 mr-1">
           {side === "left" ? "왼쪽 사이트:" : "오른쪽 사이트:"}
         </span>
         <button
           onClick={navigateBack}
           disabled={!session || !canBack}
-          className="text-zinc-500 hover:text-zinc-100 disabled:opacity-20 p-0.5 rounded transition shrink-0"
+          className="text-ink-faint hover:text-ink disabled:opacity-20 p-0.5 rounded transition shrink-0"
           title={
             canBack
               ? `뒤로: ${history.paths[history.idx - 1]}`
@@ -333,7 +333,7 @@ export default function Panel({
         <button
           onClick={navigateForward}
           disabled={!session || !canForward}
-          className="text-zinc-500 hover:text-zinc-100 disabled:opacity-20 p-0.5 rounded transition shrink-0"
+          className="text-ink-faint hover:text-ink disabled:opacity-20 p-0.5 rounded transition shrink-0"
           title={
             canForward
               ? `앞으로: ${history.paths[history.idx + 1]}`
@@ -345,7 +345,7 @@ export default function Panel({
         <button
           onClick={() => session && setSelected(parentPath(selected))}
           disabled={!session || selected === "/"}
-          className="text-zinc-500 hover:text-zinc-100 disabled:opacity-20 p-0.5 rounded transition shrink-0"
+          className="text-ink-faint hover:text-ink disabled:opacity-20 p-0.5 rounded transition shrink-0"
           title="상위 폴더"
         >
           <ChevronUp size={11} />
@@ -353,7 +353,7 @@ export default function Panel({
         <button
           onClick={() => session && setSelected(session.home || "/")}
           disabled={!session}
-          className="text-zinc-500 hover:text-zinc-100 disabled:opacity-20 p-0.5 rounded transition shrink-0"
+          className="text-ink-faint hover:text-ink disabled:opacity-20 p-0.5 rounded transition shrink-0"
           title="홈"
         >
           <Home size={11} />
@@ -370,14 +370,14 @@ export default function Panel({
             }}
             disabled={!session}
             spellCheck={false}
-            className="w-full bg-zinc-900/60 border border-zinc-800 rounded pl-2 pr-6 py-0.5 text-[11px] font-mono text-zinc-200 placeholder-zinc-600 outline-none focus:border-brand/50 disabled:text-zinc-700 transition"
+            className="w-full bg-surface/60 border border-edge rounded pl-2 pr-6 py-0.5 text-[11px] font-mono text-ink placeholder-ink-faint outline-none focus:border-brand/50 disabled:text-ink-faint transition"
             placeholder="/"
           />
           <button
             type="button"
             onClick={() => setShowHistoryMenu((v) => !v)}
             disabled={!session}
-            className="absolute top-1/2 -translate-y-1/2 right-1 text-zinc-500 hover:text-zinc-100 disabled:opacity-20 transition p-0.5 rounded"
+            className="absolute top-1/2 -translate-y-1/2 right-1 text-ink-faint hover:text-ink disabled:opacity-20 transition p-0.5 rounded"
             title="방문한 경로"
           >
             <ChevronDown size={11} />
@@ -401,7 +401,7 @@ export default function Panel({
             "transition p-0.5 rounded shrink-0 disabled:opacity-30",
             compression
               ? "text-brand hover:text-brand"
-              : "text-zinc-500 hover:text-zinc-100"
+              : "text-ink-faint hover:text-ink"
           )}
           title={
             compression
@@ -414,7 +414,7 @@ export default function Panel({
         <button
           onClick={() => setNewFolder({ parent: selected })}
           disabled={!session}
-          className="text-zinc-500 hover:text-zinc-100 disabled:opacity-30 transition p-0.5 rounded shrink-0"
+          className="text-ink-faint hover:text-ink disabled:opacity-30 transition p-0.5 rounded shrink-0"
           title="새 폴더"
         >
           <FolderPlus size={11} />
@@ -422,7 +422,7 @@ export default function Panel({
         <button
           onClick={() => setRefreshTick((t) => t + 1)}
           disabled={!session}
-          className="text-zinc-500 hover:text-zinc-100 disabled:opacity-30 transition p-0.5 rounded shrink-0"
+          className="text-ink-faint hover:text-ink disabled:opacity-30 transition p-0.5 rounded shrink-0"
           title="새로고침"
         >
           <RefreshCw size={11} />
@@ -557,13 +557,13 @@ function PathHistoryMenu({
   return (
     <div
       ref={ref}
-      className="absolute z-30 top-full left-0 right-0 mt-1 bg-zinc-950 border border-zinc-800 rounded-md shadow-2xl py-1 max-h-72 overflow-y-auto"
+      className="absolute z-30 top-full left-0 right-0 mt-1 bg-base border border-edge rounded-md shadow-2xl py-1 max-h-72 overflow-y-auto"
     >
-      <div className="px-2 py-1 text-[9px] uppercase tracking-wider text-zinc-600 flex items-center gap-1">
+      <div className="px-2 py-1 text-[9px] uppercase tracking-wider text-ink-faint flex items-center gap-1">
         <History size={10} /> 방문 기록 ({paths.length})
       </div>
       {paths.length === 0 ? (
-        <div className="px-3 py-2 text-[11px] text-zinc-600">
+        <div className="px-3 py-2 text-[11px] text-ink-faint">
           이 세션에서 방문한 경로가 없습니다
         </div>
       ) : (
@@ -574,7 +574,7 @@ function PathHistoryMenu({
             className={`w-full text-left px-3 py-1 text-[11px] font-mono truncate transition ${
               p === current
                 ? "bg-brand/10 text-brand"
-                : "text-zinc-300 hover:bg-zinc-900"
+                : "text-ink-muted hover:bg-surface"
             }`}
           >
             {p}

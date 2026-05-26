@@ -20,8 +20,8 @@ import {
 import { cn } from "../lib/utils";
 
 const LEVEL_COLOR: Record<LogLevel, string> = {
-  log: "text-zinc-300",
-  info: "text-zinc-200",
+  log: "text-ink-muted",
+  info: "text-ink",
   warn: "text-amber-300",
   error: "text-rose-400",
   invoke: "text-brand",
@@ -29,8 +29,8 @@ const LEVEL_COLOR: Record<LogLevel, string> = {
 };
 
 const LEVEL_BADGE: Record<LogLevel, string> = {
-  log: "bg-zinc-800 text-zinc-400",
-  info: "bg-zinc-800 text-zinc-300",
+  log: "bg-surface text-ink-muted",
+  info: "bg-surface text-ink-muted",
   warn: "bg-amber-500/20 text-amber-300",
   error: "bg-rose-500/20 text-rose-300",
   invoke: "bg-brand/15 text-brand",
@@ -139,7 +139,7 @@ export default function DevConsole() {
           "fixed bottom-3 right-3 z-40 flex items-center gap-1.5 px-2.5 py-1 rounded-md shadow-lg transition border text-[10px] font-mono",
           pendingTraces.length > 0
             ? "border-brand/50 bg-brand/10 text-brand animate-pulse"
-            : "border-zinc-800 bg-zinc-950/90 text-zinc-400 hover:text-zinc-100"
+            : "border-edge bg-base/90 text-ink-muted hover:text-ink"
         )}
         title="개발자 콘솔"
       >
@@ -151,20 +151,20 @@ export default function DevConsole() {
           </span>
         )}
         {entries.length > 0 && pendingTraces.length === 0 && (
-          <span className="font-mono tabular-nums text-zinc-500">
+          <span className="font-mono tabular-nums text-ink-faint">
             {entries.length}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="fixed inset-x-3 bottom-12 z-40 h-[40vh] min-h-[200px] bg-zinc-950/95 backdrop-blur border border-zinc-800 rounded-lg shadow-2xl flex flex-col">
-          <header className="flex items-center gap-2 px-3 py-1.5 border-b border-zinc-900 shrink-0">
+        <div className="fixed inset-x-3 bottom-12 z-40 h-[40vh] min-h-[200px] bg-base/95 backdrop-blur border border-edge rounded-lg shadow-2xl flex flex-col">
+          <header className="flex items-center gap-2 px-3 py-1.5 border-b border-edge shrink-0">
             <Terminal size={12} className="text-brand" />
             <span className="text-[11px] font-semibold tracking-tight">
               개발자 콘솔
             </span>
-            <span className="text-[10px] text-zinc-500 font-mono tabular-nums">
+            <span className="text-[10px] text-ink-faint font-mono tabular-nums">
               {visible.length} / {entries.length}
             </span>
             {pendingTraces.length > 0 && (
@@ -176,12 +176,12 @@ export default function DevConsole() {
               </span>
             )}
             <div className="flex-1" />
-            <Filter size={10} className="text-zinc-600" />
+            <Filter size={10} className="text-ink-faint" />
             <input
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               placeholder="필터…"
-              className="w-40 bg-zinc-900/60 border border-zinc-800 rounded px-1.5 py-0.5 text-[10px] outline-none focus:border-brand/50"
+              className="w-40 bg-surface/60 border border-edge rounded px-1.5 py-0.5 text-[10px] outline-none focus:border-brand/50"
             />
             <button
               onClick={() => setAutoscroll((v) => !v)}
@@ -189,7 +189,7 @@ export default function DevConsole() {
                 "text-[10px] px-1.5 py-0.5 rounded border transition",
                 autoscroll
                   ? "border-brand/40 bg-brand/10 text-brand"
-                  : "border-zinc-800 text-zinc-500 hover:text-zinc-300"
+                  : "border-edge text-ink-faint hover:text-ink-muted"
               )}
               title={autoscroll ? "자동 스크롤 켜짐" : "자동 스크롤 꺼짐"}
             >
@@ -197,28 +197,28 @@ export default function DevConsole() {
             </button>
             <button
               onClick={loadPrevious}
-              className="text-zinc-500 hover:text-amber-300 transition p-1 text-[10px]"
+              className="text-ink-faint hover:text-amber-300 transition p-1 text-[10px]"
               title="이전 세션(freeze 직전) 로그 불러오기"
             >
               prev
             </button>
             <button
               onClick={copyAll}
-              className="text-zinc-500 hover:text-zinc-100 transition p-1"
+              className="text-ink-faint hover:text-ink transition p-1"
               title="필터된 로그 클립보드로 복사"
             >
               <Copy size={11} />
             </button>
             <button
               onClick={() => clear()}
-              className="text-zinc-500 hover:text-rose-400 transition p-1"
+              className="text-ink-faint hover:text-rose-400 transition p-1"
               title="비우기"
             >
               <Trash2 size={11} />
             </button>
             <button
               onClick={() => setOpen(false)}
-              className="text-zinc-500 hover:text-zinc-100 transition p-1"
+              className="text-ink-faint hover:text-ink transition p-1"
               title="닫기"
             >
               <X size={12} />
@@ -226,7 +226,7 @@ export default function DevConsole() {
           </header>
 
           {/* Level toggles */}
-          <div className="flex items-center gap-1 px-3 py-1 border-b border-zinc-900 text-[9px] uppercase tracking-wider">
+          <div className="flex items-center gap-1 px-3 py-1 border-b border-edge text-[9px] uppercase tracking-wider">
             {(Object.keys(LEVEL_BADGE) as LogLevel[]).map((l) => {
               const active = activeLevels.has(l);
               return (
@@ -235,7 +235,7 @@ export default function DevConsole() {
                   onClick={() => toggleLevel(l)}
                   className={cn(
                     "px-1.5 py-0.5 rounded transition",
-                    active ? LEVEL_BADGE[l] : "text-zinc-700"
+                    active ? LEVEL_BADGE[l] : "text-ink-faint"
                   )}
                 >
                   {l}
@@ -250,7 +250,7 @@ export default function DevConsole() {
             className="flex-1 overflow-y-auto font-mono text-[10px] leading-snug"
           >
             {visible.length === 0 && (
-              <div className="h-full flex items-center justify-center text-zinc-600">
+              <div className="h-full flex items-center justify-center text-ink-faint">
                 로그 없음
               </div>
             )}
@@ -258,27 +258,27 @@ export default function DevConsole() {
               <div
                 key={e.id}
                 className={cn(
-                  "px-3 py-0.5 border-b border-zinc-900/40 flex gap-2",
+                  "px-3 py-0.5 border-b border-edge/40 flex gap-2",
                   LEVEL_COLOR[e.level]
                 )}
               >
-                <span className="text-zinc-600 shrink-0 tabular-nums">
+                <span className="text-ink-faint shrink-0 tabular-nums">
                   {formatTime(e.t)}
                 </span>
-                <span className="text-zinc-700 shrink-0 w-12 text-[9px] uppercase">
+                <span className="text-ink-faint shrink-0 w-12 text-[9px] uppercase">
                   {e.level}
                 </span>
                 <div className="flex-1 min-w-0 break-all">
                   <div>
                     {e.message}
                     {e.durationMs != null && (
-                      <span className="ml-1.5 text-zinc-500">
+                      <span className="ml-1.5 text-ink-faint">
                         ({e.durationMs}ms)
                       </span>
                     )}
                   </div>
                   {e.data && (
-                    <div className="text-zinc-500 mt-0.5 pl-2 border-l border-zinc-800">
+                    <div className="text-ink-faint mt-0.5 pl-2 border-l border-edge">
                       {e.data}
                     </div>
                   )}

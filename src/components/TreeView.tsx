@@ -183,7 +183,7 @@ export default function TreeView({
               ? "bg-brand/25 text-brand ring-1 ring-inset ring-brand/50"
               : isSelected
               ? "bg-brand/15 text-brand"
-              : "hover:bg-zinc-900/60 text-zinc-300"
+              : "hover:bg-surface/60 text-ink-muted"
           )}
           style={{ paddingLeft: 4 + depth * 14 }}
         >
@@ -192,7 +192,7 @@ export default function TreeView({
               e.stopPropagation();
               toggle(node);
             }}
-            className="w-3.5 h-3.5 flex items-center justify-center shrink-0 text-zinc-500 hover:text-zinc-200"
+            className="w-3.5 h-3.5 flex items-center justify-center shrink-0 text-ink-faint hover:text-ink"
           >
             {node.children.length > 0 || !node.loaded ? (
               isExpanded ? (
@@ -216,7 +216,7 @@ export default function TreeView({
                 e.stopPropagation();
                 onRename(node.path, node.name);
               }}
-              className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-brand shrink-0 transition"
+              className="opacity-0 group-hover:opacity-100 text-ink-faint hover:text-brand shrink-0 transition"
               title="이름 변경"
             >
               <Pencil size={10} />
@@ -291,7 +291,7 @@ export default function TreeView({
 
   if (!session)
     return (
-      <div className="h-full flex items-center justify-center text-[11px] text-zinc-600">
+      <div className="h-full flex items-center justify-center text-[11px] text-ink-faint">
         세션 미연결
       </div>
     );

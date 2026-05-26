@@ -219,13 +219,13 @@ export default function TransferQueue({
 
   return (
     <div
-      className="border-t border-zinc-900 bg-zinc-950/80 backdrop-blur flex flex-col h-full"
+      className="border-t border-edge bg-base/80 backdrop-blur flex flex-col h-full"
       onContextMenu={(e) => openContextMenu(e)}
     >
       {/* Column headers */}
       <div
         style={{ gridTemplateColumns: template }}
-        className="grid gap-2 px-3 py-1.5 border-b border-zinc-900 text-[10px] uppercase tracking-wider text-zinc-500 shrink-0"
+        className="grid gap-2 px-3 py-1.5 border-b border-edge text-[10px] uppercase tracking-wider text-ink-faint shrink-0"
       >
         <HeaderCell label="소스 파일" onResize={(dx) => resizeCol("source", dx)} />
         <div className="text-center">방향</div>
@@ -241,7 +241,7 @@ export default function TransferQueue({
       {/* Rows */}
       <div className="flex-1 overflow-y-auto">
         {visible.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-[11px] text-zinc-600">
+          <div className="h-full flex items-center justify-center text-[11px] text-ink-faint">
             {tab === "queue"
               ? "대기 중인 전송이 없습니다"
               : tab === "failed"
@@ -264,7 +264,7 @@ export default function TransferQueue({
       </div>
 
       {/* Tab bar */}
-      <div className="flex items-center border-t border-zinc-900 shrink-0">
+      <div className="flex items-center border-t border-edge shrink-0">
         {TABS.map((t) => {
           const count = buckets[t.key].length;
           const active = tab === t.key;
@@ -276,10 +276,10 @@ export default function TransferQueue({
                 clearSelection();
               }}
               className={cn(
-                "px-3 py-1.5 text-[11px] transition border-r border-zinc-900",
+                "px-3 py-1.5 text-[11px] transition border-r border-edge",
                 active
-                  ? "text-zinc-100 bg-zinc-900/70"
-                  : "text-zinc-500 hover:text-zinc-300"
+                  ? "text-ink bg-surface/70"
+                  : "text-ink-faint hover:text-ink-muted"
               )}
             >
               {t.label}
@@ -287,7 +287,7 @@ export default function TransferQueue({
                 <span
                   className={cn(
                     "ml-1.5 text-[9px] tabular-nums",
-                    active ? "text-brand" : "text-zinc-600"
+                    active ? "text-brand" : "text-ink-faint"
                   )}
                 >
                   {count}
@@ -305,7 +305,7 @@ export default function TransferQueue({
         {(tab === "failed" || tab === "done") && buckets[tab].length > 0 && (
           <button
             onClick={() => onClearTab(tab)}
-            className="px-3 py-1.5 text-[10px] text-zinc-500 hover:text-zinc-200 transition flex items-center gap-1"
+            className="px-3 py-1.5 text-[10px] text-ink-faint hover:text-ink transition flex items-center gap-1"
           >
             <Trash2 size={10} /> 비우기
           </button>
@@ -372,7 +372,7 @@ function ColResize({ onDrag }: { onDrag: (dx: number) => void }) {
       onPointerDown={onDown}
       className="absolute -right-1 top-0 bottom-0 w-2 cursor-col-resize z-10 group flex justify-center"
     >
-      <div className="w-px h-full bg-zinc-800 group-hover:bg-brand/60 group-active:bg-brand transition" />
+      <div className="w-px h-full bg-surface group-hover:bg-brand/60 group-active:bg-brand transition" />
     </div>
   );
 }
@@ -413,7 +413,7 @@ function Row({
     failed: "text-rose-400",
     cancelled: "text-amber-400",
     active: "text-brand animate-pulse",
-    queued: "text-zinc-500",
+    queued: "text-ink-faint",
   }[status];
 
   return (
@@ -425,7 +425,7 @@ function Row({
         "grid gap-2 px-3 py-1 text-[11px] transition relative cursor-default select-none",
         selected
           ? "bg-brand/15 hover:bg-brand/20"
-          : "hover:bg-zinc-900/40"
+          : "hover:bg-surface/40"
       )}
     >
       <div className="flex items-center gap-1.5 min-w-0">
@@ -438,24 +438,24 @@ function Row({
         </span>
         <PathCell path={entry.rel || entry.source} tone="bright" />
       </div>
-      <div className="flex items-center justify-center text-zinc-600">
+      <div className="flex items-center justify-center text-ink-faint">
         <ArrowRight size={10} />
       </div>
       <PathCell path={entry.dest} tone="dim" />
       <div
-        className="text-right font-mono text-zinc-500 tabular-nums flex items-center justify-end"
+        className="text-right font-mono text-ink-faint tabular-nums flex items-center justify-end"
         title={formatBytes(entry.size)}
       >
         {formatBytesExact(entry.size)}
       </div>
       <div className="flex items-center gap-1.5 text-[10px] min-w-0">
-        {status === "queued" && <span className="text-zinc-500">대기</span>}
+        {status === "queued" && <span className="text-ink-faint">대기</span>}
         {isActive && (
           <>
             <span className="text-brand font-mono tabular-nums">
               {Math.floor(pct)}%
             </span>
-            <span className="text-zinc-500 font-mono tabular-nums truncate">
+            <span className="text-ink-faint font-mono tabular-nums truncate">
               {formatSpeed(entry.bps)}
             </span>
             <button
@@ -463,7 +463,7 @@ function Row({
                 e.stopPropagation();
                 onCancelJob(entry.jobId);
               }}
-              className="text-zinc-500 hover:text-rose-400 transition ml-auto"
+              className="text-ink-faint hover:text-rose-400 transition ml-auto"
               title="이 잡 취소"
             >
               <Ban size={10} />
@@ -480,7 +480,7 @@ function Row({
       </div>
 
       {isActive && (
-        <div className="absolute left-0 right-0 bottom-0 h-[2px] bg-zinc-900">
+        <div className="absolute left-0 right-0 bottom-0 h-[2px] bg-surface">
           <div
             className="h-full bg-gradient-to-r from-brand to-brand2 transition-all duration-150"
             style={{ width: `${pct}%` }}
@@ -512,8 +512,8 @@ function PathCell({
   const lastSlash = path.lastIndexOf("/");
   const dir = lastSlash >= 0 ? path.slice(0, lastSlash + 1) : "";
   const name = lastSlash >= 0 ? path.slice(lastSlash + 1) : path;
-  const nameColor = tone === "bright" ? "text-zinc-200" : "text-zinc-400";
-  const dirColor = tone === "bright" ? "text-zinc-500" : "text-zinc-600";
+  const nameColor = tone === "bright" ? "text-ink" : "text-ink-muted";
+  const dirColor = tone === "bright" ? "text-ink-faint" : "text-ink-faint";
 
   return (
     <div

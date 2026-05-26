@@ -1,52 +1,71 @@
-// Theme registry. Each theme's `brand` / `brand2` rgb triplets feed into
-// CSS variables on <html data-theme="..."> — see index.css.
+// Theme registry. Each entry maps to CSS variables on <html data-theme="…">
+// — see index.css for the actual color values.
 
-export type ThemeId = "midnight" | "ocean" | "forest" | "sunset" | "aurora";
+export type ThemeId =
+  | "midnight"
+  | "forest"
+  | "sunset"
+  | "daylight"
+  | "paper";
 
 export interface ThemeMeta {
   id: ThemeId;
   label: string;
-  /** Swatch colors used in the picker preview. Mirror the CSS vars. */
+  /** Page background swatch — what the chrome will look like overall. */
+  bg: string;
+  /** Primary accent swatch. */
   brand: string;
+  /** Secondary accent swatch (gradient pair). */
   brand2: string;
   hint: string;
+  scheme: "dark" | "light";
 }
 
 export const THEMES: ThemeMeta[] = [
   {
     id: "midnight",
     label: "Midnight",
+    bg: "rgb(10, 10, 11)",
     brand: "rgb(34, 211, 238)",
     brand2: "rgb(168, 85, 247)",
-    hint: "cyan + violet (default)",
-  },
-  {
-    id: "ocean",
-    label: "Ocean",
-    brand: "rgb(45, 212, 191)",
-    brand2: "rgb(56, 189, 248)",
-    hint: "teal + sky",
+    hint: "기본 — 검정 + cyan/violet",
+    scheme: "dark",
   },
   {
     id: "forest",
     label: "Forest",
+    bg: "rgb(8, 14, 12)",
     brand: "rgb(52, 211, 153)",
     brand2: "rgb(163, 230, 53)",
-    hint: "emerald + lime",
+    hint: "짙은 녹 + emerald/lime",
+    scheme: "dark",
   },
   {
     id: "sunset",
     label: "Sunset",
+    bg: "rgb(20, 12, 9)",
     brand: "rgb(251, 146, 60)",
     brand2: "rgb(251, 113, 133)",
-    hint: "orange + rose",
+    hint: "따뜻한 어둠 + orange/rose",
+    scheme: "dark",
   },
   {
-    id: "aurora",
-    label: "Aurora",
-    brand: "rgb(192, 132, 252)",
-    brand2: "rgb(232, 121, 249)",
-    hint: "purple + fuchsia",
+    id: "daylight",
+    label: "Daylight",
+    bg: "rgb(250, 250, 250)",
+    brand: "rgb(6, 182, 212)",
+    brand2: "rgb(124, 58, 237)",
+    hint: "밝은 회백 + cyan/violet",
+    scheme: "light",
+  },
+  {
+    id: "paper",
+    label: "Paper",
+    bg: "rgb(250, 246, 238)",
+    brand: "rgb(217, 119, 6)",
+    brand2: "rgb(219, 39, 119)",
+    hint: "크림 + amber/pink",
+    scheme: "light",
   },
 ];
 

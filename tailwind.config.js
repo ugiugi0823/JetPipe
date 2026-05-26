@@ -23,12 +23,17 @@ export default {
           muted: "#27272a",
           accent: "#22d3ee",
         },
-        // Theme-aware accents. The CSS variables `--brand` and `--brand2`
-        // are set by data-theme="..." on <html> (see index.css). Using
-        // `<alpha-value>` lets Tailwind's opacity modifiers (`bg-brand/10`,
-        // `text-brand2/40` etc.) work normally.
+        // Theme-aware tokens. CSS variables are set by data-theme="..." on
+        // <html> (see index.css). Each token is `rgb(var(--xxx) / <alpha-value>)`
+        // so Tailwind's opacity modifiers (`bg-surface/40`) keep working.
         brand: "rgb(var(--brand) / <alpha-value>)",
         brand2: "rgb(var(--brand2) / <alpha-value>)",
+        base: "rgb(var(--bg) / <alpha-value>)",
+        surface: "rgb(var(--surface) / <alpha-value>)",
+        edge: "rgb(var(--border) / <alpha-value>)",
+        ink: "rgb(var(--text) / <alpha-value>)",
+        "ink-muted": "rgb(var(--text-muted) / <alpha-value>)",
+        "ink-faint": "rgb(var(--text-faint) / <alpha-value>)",
       },
       keyframes: {
         "pulse-glow": {

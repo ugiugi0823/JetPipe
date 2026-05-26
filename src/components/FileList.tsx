@@ -92,7 +92,7 @@ export default function FileList({
   return (
     <div className="h-full flex flex-col">
       {/* Column headers */}
-      <div className="grid grid-cols-[1fr_70px_90px_90px] gap-2 px-2 py-1 border-b border-zinc-900 text-[10px] uppercase tracking-wider text-zinc-500 shrink-0">
+      <div className="grid grid-cols-[1fr_70px_90px_90px] gap-2 px-2 py-1 border-b border-edge text-[10px] uppercase tracking-wider text-ink-faint shrink-0">
         <div>파일명</div>
         <div className="text-right">크기</div>
         <div>파일 유형</div>
@@ -101,7 +101,7 @@ export default function FileList({
 
       <div className="flex-1 overflow-y-auto">
         {!session && (
-          <div className="h-full flex items-center justify-center text-[11px] text-zinc-600">
+          <div className="h-full flex items-center justify-center text-[11px] text-ink-faint">
             세션 미연결
           </div>
         )}
@@ -112,7 +112,7 @@ export default function FileList({
           </div>
         )}
         {session && !error && entries.length === 0 && !loading && (
-          <div className="h-full flex items-center justify-center text-[11px] text-zinc-600">
+          <div className="h-full flex items-center justify-center text-[11px] text-ink-faint">
             파일 없음
           </div>
         )}
@@ -166,7 +166,7 @@ export default function FileList({
                 "group grid grid-cols-[1fr_70px_90px_90px] gap-2 px-2 py-0.5 text-xs transition select-none",
                 dragOverPath === e.path
                   ? "bg-brand/25 ring-1 ring-inset ring-brand/50"
-                  : "hover:bg-zinc-900/60",
+                  : "hover:bg-surface/60",
                 e.isDir
                   ? "cursor-pointer"
                   : "cursor-grab active:cursor-grabbing"
@@ -176,16 +176,16 @@ export default function FileList({
                 {e.isDir ? (
                   <Folder size={11} className="text-amber-400/80 shrink-0" />
                 ) : (
-                  <FileIcon size={11} className="text-zinc-500 shrink-0" />
+                  <FileIcon size={11} className="text-ink-faint shrink-0" />
                 )}
-                <span className="truncate text-zinc-200 flex-1">{e.name}</span>
+                <span className="truncate text-ink flex-1">{e.name}</span>
                 {onRename && (
                   <button
                     onClick={(ev) => {
                       ev.stopPropagation();
                       onRename(e.path, e.name);
                     }}
-                    className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-brand shrink-0 transition"
+                    className="opacity-0 group-hover:opacity-100 text-ink-faint hover:text-brand shrink-0 transition"
                     title="이름 변경"
                   >
                     <Pencil size={10} />
@@ -193,26 +193,26 @@ export default function FileList({
                 )}
               </div>
               <div
-                className="text-right font-mono text-[10px] text-zinc-400 tabular-nums"
+                className="text-right font-mono text-[10px] text-ink-muted tabular-nums"
                 title={e.isDir ? "" : formatBytes(e.size)}
               >
                 {e.isDir ? "" : formatBytesExact(e.size)}
               </div>
-              <div className="text-[10px] text-zinc-500 truncate">
+              <div className="text-[10px] text-ink-faint truncate">
                 {e.isDir
                   ? "폴더"
                   : e.name.includes(".")
                   ? e.name.split(".").pop()?.toUpperCase()
                   : "파일"}
               </div>
-              <div className="text-[10px] text-zinc-500 truncate font-mono">
+              <div className="text-[10px] text-ink-faint truncate font-mono">
                 {formatDate(e.modified)}
               </div>
             </div>
           ))}
       </div>
 
-      <div className="px-2 py-1 border-t border-zinc-900 text-[10px] text-zinc-500 font-mono tabular-nums shrink-0">
+      <div className="px-2 py-1 border-t border-edge text-[10px] text-ink-faint font-mono tabular-nums shrink-0">
         {session
           ? `${fileCount} 파일 / ${dirCount} 디렉토리, 총 ${formatBytesExact(totalFileBytes)} 바이트`
           : "—"}

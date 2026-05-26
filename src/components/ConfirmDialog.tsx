@@ -36,8 +36,8 @@ export default function ConfirmDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-[420px] bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl">
-        <header className="flex items-center justify-between px-5 py-3 border-b border-zinc-900">
+      <div className="w-[420px] bg-base border border-edge rounded-xl shadow-2xl">
+        <header className="flex items-center justify-between px-5 py-3 border-b border-edge">
           <div className="flex items-center gap-2">
             {danger && (
               <AlertTriangle size={14} className="text-rose-400 shrink-0" />
@@ -46,15 +46,15 @@ export default function ConfirmDialog({
           </div>
           <button
             onClick={onCancel}
-            className="text-zinc-500 hover:text-zinc-200 transition"
+            className="text-ink-faint hover:text-ink transition"
           >
             <X size={15} />
           </button>
         </header>
         <div className="p-5 space-y-2">
-          <div className="text-xs text-zinc-200 leading-relaxed">{message}</div>
+          <div className="text-xs text-ink leading-relaxed">{message}</div>
           {detail && (
-            <div className="text-[10px] text-zinc-500 font-mono break-all bg-zinc-900/40 border border-zinc-900 rounded px-2 py-1.5">
+            <div className="text-[10px] text-ink-faint font-mono break-all bg-surface/40 border border-edge rounded px-2 py-1.5">
               {detail}
             </div>
           )}
@@ -64,10 +64,10 @@ export default function ConfirmDialog({
             </div>
           )}
         </div>
-        <footer className="px-5 py-3 border-t border-zinc-900 flex justify-end gap-2">
+        <footer className="px-5 py-3 border-t border-edge flex justify-end gap-2">
           <button
             onClick={onCancel}
-            className="px-3 py-1.5 text-xs rounded border border-zinc-800 text-zinc-400 hover:text-zinc-100 transition"
+            className="px-3 py-1.5 text-xs rounded border border-edge text-ink-muted hover:text-ink transition"
           >
             취소
           </button>

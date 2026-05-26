@@ -59,21 +59,21 @@ export default function PromptDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <form
         onSubmit={submit}
-        className="w-[380px] bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl"
+        className="w-[380px] bg-base border border-edge rounded-xl shadow-2xl"
       >
-        <header className="flex items-center justify-between px-5 py-3 border-b border-zinc-900">
+        <header className="flex items-center justify-between px-5 py-3 border-b border-edge">
           <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
           <button
             type="button"
             onClick={onCancel}
-            className="text-zinc-500 hover:text-zinc-200 transition"
+            className="text-ink-faint hover:text-ink transition"
           >
             <X size={15} />
           </button>
         </header>
         <div className="p-5 space-y-2">
           {label && (
-            <div className="text-[10px] uppercase tracking-wider text-zinc-500">
+            <div className="text-[10px] uppercase tracking-wider text-ink-faint">
               {label}
             </div>
           )}
@@ -85,7 +85,7 @@ export default function PromptDialog({
               if (e.key === "Escape") onCancel();
             }}
             spellCheck={false}
-            className="w-full bg-zinc-900/60 border border-zinc-800 rounded px-2.5 py-1.5 text-xs font-mono text-zinc-100 outline-none focus:border-brand/50 transition"
+            className="w-full bg-surface/60 border border-edge rounded px-2.5 py-1.5 text-xs font-mono text-ink outline-none focus:border-brand/50 transition"
           />
           {error && (
             <div className="text-[10px] text-rose-400 font-mono break-all pt-1">
@@ -93,18 +93,18 @@ export default function PromptDialog({
             </div>
           )}
         </div>
-        <footer className="px-5 py-3 border-t border-zinc-900 flex justify-end gap-2">
+        <footer className="px-5 py-3 border-t border-edge flex justify-end gap-2">
           <button
             type="button"
             onClick={onCancel}
-            className="px-3 py-1.5 text-xs rounded border border-zinc-800 text-zinc-400 hover:text-zinc-100 transition"
+            className="px-3 py-1.5 text-xs rounded border border-edge text-ink-muted hover:text-ink transition"
           >
             취소
           </button>
           <button
             type="submit"
             disabled={busy || !value.trim()}
-            className="px-3 py-1.5 text-xs rounded bg-brand hover:bg-brand disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-950 font-medium transition"
+            className="px-3 py-1.5 text-xs rounded bg-brand hover:bg-brand disabled:bg-surface disabled:text-ink-faint text-zinc-950 font-medium transition"
           >
             {busy ? "처리 중…" : confirmText}
           </button>
