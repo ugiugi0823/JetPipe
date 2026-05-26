@@ -372,7 +372,11 @@ function ColResize({ onDrag }: { onDrag: (dx: number) => void }) {
       onPointerDown={onDown}
       className="absolute -right-1 top-0 bottom-0 w-2 cursor-col-resize z-10 group flex justify-center"
     >
-      <div className="w-px h-full bg-surface group-hover:bg-brand/60 group-active:bg-brand transition" />
+      {/* Resizer line: was using `bg-edge`/`bg-surface` which is too
+       *  close to the surrounding chrome to read as a separator. Boost
+       *  to ink-faint/40 so it's actually visible without being loud,
+       *  and grow on hover for a clear drag affordance. */}
+      <div className="w-[1.5px] h-full bg-ink-faint/40 group-hover:bg-brand/70 group-hover:w-[2.5px] group-active:bg-brand transition-all" />
     </div>
   );
 }
