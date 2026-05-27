@@ -6,7 +6,12 @@ export type ThemeId =
   | "forest"
   | "sunset"
   | "daylight"
-  | "paper";
+  | "paper"
+  | "ocean"
+  | "aurora"
+  | "crimson"
+  | "nord"
+  | "mint";
 
 export interface ThemeMeta {
   id: ThemeId;
@@ -84,6 +89,66 @@ export const THEMES: ThemeMeta[] = [
     hint: "크림 + amber/pink",
     description:
       "오래된 종이 같은 크림 배경. 앰버와 핑크 포인트. 책 읽는 듯한 따뜻한 light 모드.",
+    scheme: "light",
+  },
+  {
+    id: "ocean",
+    label: "Ocean",
+    bg: "rgb(8, 12, 20)",
+    surface: "rgb(18, 26, 40)",
+    brand: "rgb(45, 212, 191)",
+    brand2: "rgb(56, 189, 248)",
+    hint: "심해 네이비 + teal/sky",
+    description:
+      "깊은 바다 같은 네이비 배경에 청록과 하늘색. 차갑고 집중되는 다크 테마.",
+    scheme: "dark",
+  },
+  {
+    id: "aurora",
+    label: "Aurora",
+    bg: "rgb(14, 10, 22)",
+    surface: "rgb(26, 20, 38)",
+    brand: "rgb(192, 132, 252)",
+    brand2: "rgb(232, 121, 249)",
+    hint: "보랏빛 어둠 + purple/fuchsia",
+    description:
+      "오로라 같은 보랏빛. 자주와 푸시아 네온. 화려하고 몽환적인 다크 테마.",
+    scheme: "dark",
+  },
+  {
+    id: "crimson",
+    label: "Crimson",
+    bg: "rgb(16, 9, 10)",
+    surface: "rgb(30, 18, 20)",
+    brand: "rgb(248, 113, 113)",
+    brand2: "rgb(251, 191, 36)",
+    hint: "검붉은 어둠 + red/amber",
+    description:
+      "거의 검은 적색 배경에 선홍과 앰버. 강렬한 대비를 좋아할 때.",
+    scheme: "dark",
+  },
+  {
+    id: "nord",
+    label: "Nord",
+    bg: "rgb(18, 22, 30)",
+    surface: "rgb(30, 36, 48)",
+    brand: "rgb(136, 192, 208)",
+    brand2: "rgb(129, 161, 193)",
+    hint: "차분한 슬레이트 + frost",
+    description:
+      "Nord 팔레트. 부드러운 슬레이트 블루 배경에 절제된 프로스트 색. 눈이 편한 다크.",
+    scheme: "dark",
+  },
+  {
+    id: "mint",
+    label: "Mint",
+    bg: "rgb(244, 250, 246)",
+    surface: "rgb(232, 244, 238)",
+    brand: "rgb(16, 185, 129)",
+    brand2: "rgb(20, 184, 166)",
+    hint: "민트 화이트 + emerald/teal",
+    description:
+      "산뜻한 민트빛 흰 배경에 에메랄드와 청록. 가볍고 깨끗한 light 모드.",
     scheme: "light",
   },
 ];

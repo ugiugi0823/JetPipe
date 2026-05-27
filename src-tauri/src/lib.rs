@@ -28,6 +28,7 @@ pub fn run() {
             session::cmd_delete,
             transfer::cmd_pipe_transfer,
             transfer::cmd_cancel_transfer,
+            transfer::cmd_speedtest,
             keychain::cmd_keychain_set,
             keychain::cmd_keychain_get,
             keychain::cmd_keychain_delete,

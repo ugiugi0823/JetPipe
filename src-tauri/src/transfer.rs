@@ -880,3 +880,73 @@ pub fn cmd_cancel_transfer(
 ) -> JetResult<bool> {
     Ok(cancels.cancel(&job_id))
 }
+
+#[derive(Debug, Clone, Serialize)]
+pub struct SpeedResult {
+    pub bytes: u64,
+    pub upload_bps: f64,
+    pub download_bps: f64,
+}
+
+/// Round-trip throughput test for a connection: write a temp file of
+/// `size_mb` (measures upload), read it back (measures download), then
+/// delete it. Single-stream — a fair "how fast is this link" number,
+/// independent of the parallel/chunked transfer machinery.
+#[tauri::command]
+pub async fn cmd_speedtest(
+    store: tauri::State<'_, Arc<SessionStore>>,
+    id: String,
+    home: String,
+    size_mb: Option<u64>,
+) -> JetResult<SpeedResult> {
+    let conn = store.get(&id)?;
+    let size = size_mb.unwrap_or(32).clamp(1, 1024) * 1024 * 1024;
+    let test_path = format!("{}/.jetpipe_speedtest.tmp", home.trim_end_matches('/'));
+    let chunk = vec![0u8; CHUNK_SIZE];
+
+    // Upload phase.
+    let up_start = Instant::now();
+    {
+        let mut writer = conn
+            .open_writer(&test_path)
+            .map_err(JetError::Other)?;
+        let mut remaining = size;
+        while remaining > 0 {
+            let n = (remaining as usize).min(CHUNK_SIZE);
+            writer
+                .write_all(&chunk[..n])
+                .map_err(|e| JetError::Other(format!("speedtest write: {e}")))?;
+            remaining -= n as u64;
+        }
+        writer
+            .flush()
+            .map_err(|e| JetError::Other(format!("speedtest flush: {e}")))?;
+    }
+    let up_secs = up_start.elapsed().as_secs_f64().max(0.001);
+
+    // Download phase.
+    let down_start = Instant::now();
+    {
+        let mut reader = conn
+            .open_reader(&test_path)
+            .map_err(JetError::Other)?;
+        let mut buf = vec![0u8; CHUNK_SIZE];
+        loop {
+            let n = reader
+                .read(&mut buf)
+                .map_err(|e| JetError::Other(format!("speedtest read: {e}")))?;
+            if n == 0 {
+                break;
+            }
+        }
+    }
+    let down_secs = down_start.elapsed().as_secs_f64().max(0.001);
+
+    conn.unlink_quiet(&test_path);
+
+    Ok(SpeedResult {
+        bytes: size,
+        upload_bps: size as f64 / up_secs,
+        download_bps: size as f64 / down_secs,
+    })
+}

@@ -21,6 +21,8 @@ const INVOKE_TIMEOUT_MS: Record<string, number> = {
   // Transfers run for arbitrarily long; let Rust manage the lifetime.
   cmd_pipe_transfer: 0,
   cmd_cancel_transfer: 5_000,
+  // Speedtest writes+reads 32MB; on a slow link that's a while.
+  cmd_speedtest: 0,
 };
 
 /** invoke wrapped so every Rust command call is logged into the dev console
@@ -175,6 +177,25 @@ export async function pipeTransfer(args: {
 
 export async function cancelTransfer(jobId: string): Promise<boolean> {
   return invoke<boolean>("cmd_cancel_transfer", { jobId });
+}
+
+export interface SpeedResult {
+  bytes: number;
+  uploadBps: number;
+  downloadBps: number;
+}
+
+export async function speedtest(
+  id: string,
+  home: string,
+  sizeMb?: number
+): Promise<SpeedResult> {
+  const r = await invoke<{
+    bytes: number;
+    upload_bps: number;
+    download_bps: number;
+  }>("cmd_speedtest", { id, home, sizeMb: sizeMb ?? null });
+  return { bytes: r.bytes, uploadBps: r.upload_bps, downloadBps: r.download_bps };
 }
 
 export type EnqueueHandler = (jobId: string, files: QueueEntry[]) => void;

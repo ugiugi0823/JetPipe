@@ -74,6 +74,66 @@ html[data-theme="paper"] {
   color-scheme: light;
 }
 
+html[data-theme="ocean"] {
+  --bg: 8 12 20;
+  --surface: 18 26 40;
+  --border: 38 52 72;
+  --text: 236 243 251;
+  --text-muted: 184 200 220;
+  --text-faint: 144 164 188;
+  --brand: 45 212 191;
+  --brand2: 56 189 248;
+  color-scheme: dark;
+}
+
+html[data-theme="aurora"] {
+  --bg: 14 10 22;
+  --surface: 26 20 38;
+  --border: 52 40 72;
+  --text: 246 242 252;
+  --text-muted: 200 190 216;
+  --text-faint: 162 150 182;
+  --brand: 192 132 252;
+  --brand2: 232 121 249;
+  color-scheme: dark;
+}
+
+html[data-theme="crimson"] {
+  --bg: 16 9 10;
+  --surface: 30 18 20;
+  --border: 62 38 42;
+  --text: 251 240 240;
+  --text-muted: 210 184 186;
+  --text-faint: 172 142 144;
+  --brand: 248 113 113;
+  --brand2: 251 191 36;
+  color-scheme: dark;
+}
+
+html[data-theme="nord"] {
+  --bg: 18 22 30;
+  --surface: 30 36 48;
+  --border: 56 64 82;
+  --text: 233 237 244;
+  --text-muted: 188 198 214;
+  --text-faint: 148 160 180;
+  --brand: 136 192 208;
+  --brand2: 129 161 193;
+  color-scheme: dark;
+}
+
+html[data-theme="mint"] {
+  --bg: 244 250 246;
+  --surface: 230 244 238;
+  --border: 200 222 212;
+  --text: 22 34 28;
+  --text-muted: 60 86 76;
+  --text-faint: 96 122 110;
+  --brand: 16 185 129;
+  --brand2: 20 184 166;
+  color-scheme: light;
+}
+
 html,
 body,
 #root {

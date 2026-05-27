@@ -16,7 +16,14 @@ import {
   onEnqueue,
   onFileProgress,
   pipeTransfer,
+  speedtest,
 } from "./lib/api";
+
+export interface SpeedState {
+  status: "measuring" | "done" | "error";
+  uploadBps?: number;
+  downloadBps?: number;
+}
 
 const LOCAL_SAVED_ID = "__local__";
 const LOCAL_LABEL = "로컬 PC";
@@ -90,6 +97,26 @@ export default function App() {
   function bumpRefresh(wsId: string, side: PanelSide) {
     const k = `${wsId}:${side}`;
     setRefreshKeys((m) => ({ ...m, [k]: (m[k] ?? 0) + 1 }));
+  }
+
+  // Throughput results keyed by live session id.
+  const [speeds, setSpeeds] = useState<Record<string, SpeedState>>({});
+
+  async function runSpeedtest(live: LiveSession) {
+    setSpeeds((m) => ({ ...m, [live.id]: { status: "measuring" } }));
+    try {
+      const r = await speedtest(live.id, live.home);
+      setSpeeds((m) => ({
+        ...m,
+        [live.id]: {
+          status: "done",
+          uploadBps: r.uploadBps,
+          downloadBps: r.downloadBps,
+        },
+      }));
+    } catch {
+      setSpeeds((m) => ({ ...m, [live.id]: { status: "error" } }));
+    }
   }
 
   const activeWs =
@@ -179,6 +206,8 @@ export default function App() {
         ...w,
         [side]: { live: ls, savedId: saved.id, label: saved.label },
       }));
+      // Auto-measure throughput once on connect.
+      void runSpeedtest(ls);
     } catch (e: any) {
       devlog.error(`handleConnect:failed ${side}`, e?.message ?? e);
       pushErrorRow(`연결 실패: ${e?.message ?? e}`);
@@ -200,6 +229,7 @@ export default function App() {
         ...w,
         [side]: { live: ls, savedId: LOCAL_SAVED_ID, label: LOCAL_LABEL },
       }));
+      void runSpeedtest(ls);
     } catch (e: any) {
       pushErrorRow(`로컬 연결 실패: ${e?.message ?? e}`);
     } finally {
@@ -436,6 +466,14 @@ export default function App() {
         onConnect={handleConnect}
         onConnectLocal={handleConnectLocal}
         onDisconnect={handleDisconnect}
+        speeds={{
+          left: activeWs.left ? speeds[activeWs.left.live.id] : undefined,
+          right: activeWs.right ? speeds[activeWs.right.live.id] : undefined,
+        }}
+        onSpeedtest={(side) => {
+          const conn = activeWs[side];
+          if (conn) void runSpeedtest(conn.live);
+        }}
       />
 
       <main ref={mainRef} className="flex-1 flex flex-col min-w-0">

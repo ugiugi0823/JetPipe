@@ -24,9 +24,15 @@ export default function SettingsDialog({ onClose }: Props) {
   // `backdrop-blur` ancestor — `backdrop-filter` creates a containing
   // block for `position: fixed`, otherwise pinning the modal inside
   // the sidebar instead of the viewport.
+  const wide = view === "theme";
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-[460px] bg-base border border-edge rounded-xl shadow-2xl">
+      <div
+        className={cn(
+          "bg-base border border-edge rounded-xl shadow-2xl transition-all",
+          wide ? "w-[680px]" : "w-[460px]"
+        )}
+      >
         <header className="flex items-center gap-2 px-5 py-3 border-b border-edge">
           {view === "theme" ? (
             <>
@@ -107,9 +113,9 @@ function ThemeView() {
   return (
     <div className="p-4 max-h-[70vh] overflow-y-auto">
       <div className="text-[10px] uppercase tracking-wider text-ink-faint mb-2">
-        5가지 테마 — 클릭하면 즉시 적용
+        {THEMES.length}가지 테마 — 클릭하면 즉시 적용
       </div>
-      <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-2">
         {THEMES.map((t) => {
           const selected = t.id === active;
           return (
@@ -117,7 +123,7 @@ function ThemeView() {
               key={t.id}
               onClick={() => pick(t.id)}
               className={cn(
-                "w-full flex items-start gap-3 p-3 rounded-md border transition text-left",
+                "flex items-start gap-2.5 p-2.5 rounded-md border transition text-left min-w-0",
                 selected
                   ? "border-brand/50 bg-brand/5"
                   : "border-edge hover:border-edge hover:bg-surface/40"
@@ -125,33 +131,33 @@ function ThemeView() {
             >
               {/* Live preview: actual bg + surface + accent dots */}
               <div
-                className="w-16 h-14 rounded-md ring-1 ring-edge shrink-0 relative overflow-hidden flex items-center justify-center"
+                className="w-12 h-11 rounded-md ring-1 ring-edge shrink-0 relative overflow-hidden"
                 style={{ background: t.bg }}
               >
                 <div
-                  className="absolute left-1 right-1 top-1 h-4 rounded-sm"
+                  className="absolute left-1 right-1 top-1 h-3 rounded-sm"
                   style={{ background: t.surface }}
                 />
                 <div className="absolute bottom-1 left-1 right-1 flex items-center gap-0.5">
                   <span
-                    className="w-3 h-3 rounded-full shadow"
+                    className="w-2.5 h-2.5 rounded-full shadow"
                     style={{ background: t.brand }}
                   />
                   <span
-                    className="w-3 h-3 rounded-full shadow -ml-1"
+                    className="w-2.5 h-2.5 rounded-full shadow -ml-1"
                     style={{ background: t.brand2 }}
                   />
                 </div>
               </div>
 
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-semibold text-ink">
+                <div className="flex items-center gap-1">
+                  <span className="text-xs font-semibold text-ink truncate">
                     {t.label}
                   </span>
                   <span
                     className={cn(
-                      "text-[9px] uppercase tracking-wider px-1 py-0.5 rounded",
+                      "text-[8px] uppercase tracking-wider px-1 rounded shrink-0",
                       t.scheme === "light"
                         ? "bg-amber-500/15 text-amber-500"
                         : "bg-surface text-ink-muted"
@@ -160,14 +166,11 @@ function ThemeView() {
                     {t.scheme}
                   </span>
                   {selected && (
-                    <Check size={12} className="text-brand ml-auto shrink-0" />
+                    <Check size={11} className="text-brand ml-auto shrink-0" />
                   )}
                 </div>
-                <div className="text-[10px] text-ink-faint mt-0.5">
+                <div className="text-[10px] text-ink-faint mt-0.5 truncate">
                   {t.hint}
-                </div>
-                <div className="text-[11px] text-ink-muted mt-1 leading-snug">
-                  {t.description}
                 </div>
               </div>
             </button>

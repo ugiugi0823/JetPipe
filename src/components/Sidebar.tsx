@@ -14,6 +14,10 @@ import {
   Pencil,
   Settings,
   Monitor,
+  RefreshCw,
+  Loader2,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import SettingsDialog from "./SettingsDialog";
 import type { LiveSession, PanelSide, SavedSession } from "../types";
@@ -30,9 +34,24 @@ interface Props {
   onConnect: (saved: SavedSession, side: PanelSide) => void;
   onConnectLocal: (side: PanelSide) => void;
   onDisconnect: (side: PanelSide) => void;
+  speeds: Record<PanelSide, SpeedState | undefined>;
+  onSpeedtest: (side: PanelSide) => void;
+}
+
+interface SpeedState {
+  status: "measuring" | "done" | "error";
+  uploadBps?: number;
+  downloadBps?: number;
 }
 
 const LOCAL_ID = "__local__";
+
+function fmtSpeed(bps?: number): string {
+  if (!bps || !Number.isFinite(bps)) return "—";
+  const mb = bps / (1024 * 1024);
+  if (mb >= 1) return `${mb.toFixed(1)} MB/s`;
+  return `${(bps / 1024).toFixed(0)} KB/s`;
+}
 
 const COLLAPSE_KEY = "jetpipe.sidebar.collapsed";
 
@@ -47,6 +66,8 @@ export default function Sidebar({
   onConnect,
   onConnectLocal,
   onDisconnect,
+  speeds,
+  onSpeedtest,
 }: Props) {
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -155,36 +176,76 @@ export default function Sidebar({
           {(["left", "right"] as PanelSide[]).map((side) => {
             const live = liveByPanel[side];
             if (!live) return null;
+            const sp = speeds[side];
             return (
-              <div
-                key={side}
-                className="flex items-center justify-between gap-2 text-[10px]"
-              >
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <ArrowLeftRight
-                    size={10}
-                    className={cn(
-                      "shrink-0",
-                      side === "left"
-                        ? "rotate-180 text-brand/70"
-                        : "text-brand2/70"
-                    )}
-                  />
-                  <span className="text-ink-faint uppercase tracking-wider shrink-0">
-                    {side}
-                  </span>
-                  <span className="font-mono text-ink-muted truncate">
-                    {live.username}@{live.host}
-                  </span>
+              <div key={side} className="space-y-0.5">
+                <div className="flex items-center justify-between gap-2 text-[10px]">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <ArrowLeftRight
+                      size={10}
+                      className={cn(
+                        "shrink-0",
+                        side === "left"
+                          ? "rotate-180 text-brand/70"
+                          : "text-brand2/70"
+                      )}
+                    />
+                    <span className="text-ink-faint uppercase tracking-wider shrink-0">
+                      {side}
+                    </span>
+                    <span className="font-mono text-ink-muted truncate">
+                      {live.username}@{live.host}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => onDisconnect(side)}
+                    className="shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-rose-500/30 text-rose-400 hover:bg-rose-500/15 hover:border-rose-500/50 transition"
+                    title={`${side} 연결 종료`}
+                  >
+                    <X size={10} />
+                    <span className="text-[9px]">종료</span>
+                  </button>
                 </div>
-                <button
-                  onClick={() => onDisconnect(side)}
-                  className="shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-rose-500/30 text-rose-400 hover:bg-rose-500/15 hover:border-rose-500/50 transition"
-                  title={`${side} 연결 종료`}
-                >
-                  <X size={10} />
-                  <span className="text-[9px]">종료</span>
-                </button>
+                {/* Throughput + re-measure */}
+                <div className="flex items-center gap-2 pl-4 text-[10px]">
+                  {sp?.status === "measuring" ? (
+                    <span className="flex items-center gap-1 text-ink-faint">
+                      <Loader2 size={9} className="animate-spin" /> 측정 중…
+                    </span>
+                  ) : sp?.status === "done" ? (
+                    <span className="flex items-center gap-1.5 font-mono">
+                      <span
+                        className="flex items-center gap-0.5 text-brand"
+                        title="업로드"
+                      >
+                        <ArrowUp size={9} />
+                        {fmtSpeed(sp.uploadBps)}
+                      </span>
+                      <span
+                        className="flex items-center gap-0.5 text-brand2"
+                        title="다운로드"
+                      >
+                        <ArrowDown size={9} />
+                        {fmtSpeed(sp.downloadBps)}
+                      </span>
+                    </span>
+                  ) : sp?.status === "error" ? (
+                    <span className="text-rose-400/80">측정 실패</span>
+                  ) : (
+                    <span className="text-ink-faint">속도 미측정</span>
+                  )}
+                  <button
+                    onClick={() => onSpeedtest(side)}
+                    disabled={sp?.status === "measuring"}
+                    className="text-ink-faint hover:text-ink disabled:opacity-40 transition shrink-0"
+                    title="속도 다시 측정"
+                  >
+                    <RefreshCw
+                      size={10}
+                      className={sp?.status === "measuring" ? "animate-spin" : ""}
+                    />
+                  </button>
+                </div>
               </div>
             );
           })}
