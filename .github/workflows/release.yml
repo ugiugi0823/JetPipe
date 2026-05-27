@@ -15,14 +15,19 @@ permissions:
 
 jobs:
   build:
-    # Windows-only release builds from v0.1.11 onwards. macOS/Linux drops
-    # were a "build everything" hangover from initial setup; the project
-    # is now distributed as a Windows installer + the local macOS build
-    # for the maintainer's own machine.
+    # All-platform release: Windows installer, macOS (Apple Silicon +
+    # Intel) .dmg, and Linux .deb/.AppImage/.rpm. vendored-openssl +
+    # openssl-on-win32 make the x86_64 macOS cross-compile work too.
     strategy:
       fail-fast: false
       matrix:
         include:
+          - platform: macos-latest
+            args: "--target aarch64-apple-darwin"
+          - platform: macos-latest
+            args: "--target x86_64-apple-darwin"
+          - platform: ubuntu-22.04
+            args: ""
           - platform: windows-latest
             args: ""
 
