@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Pencil } from "lucide-react";
 import Sidebar from "./components/Sidebar";
 import Panel from "./components/Panel";
 import ConnectionDialog from "./components/ConnectionDialog";
@@ -510,6 +510,18 @@ export default function App() {
                   />
                 ) : (
                   <span className="text-[11px] truncate">{wsTitle(ws, i)}</span>
+                )}
+                {!editing && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      startRenameTab(ws, i);
+                    }}
+                    className="shrink-0 text-ink-faint hover:text-brand opacity-0 group-hover:opacity-100 transition p-0.5 rounded"
+                    title="탭 이름 변경"
+                  >
+                    <Pencil size={10} />
+                  </button>
                 )}
                 <button
                   onClick={(e) => {
