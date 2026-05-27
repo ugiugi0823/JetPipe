@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import type { LucideIcon } from "lucide-react";
 
 export interface ContextMenuItem {
@@ -45,7 +46,7 @@ export default function ContextMenu({ x, y, items, onClose }: Props) {
   const top = Math.min(y, window.innerHeight - estHeight - 8);
   const left = Math.min(x, window.innerWidth - 180);
 
-  return (
+  return createPortal(
     <div
       ref={ref}
       style={{ top, left }}
@@ -72,6 +73,7 @@ export default function ContextMenu({ x, y, items, onClose }: Props) {
           </button>
         );
       })}
-    </div>
+    </div>,
+    document.body
   );
 }

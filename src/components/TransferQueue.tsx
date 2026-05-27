@@ -82,7 +82,11 @@ export default function TransferQueue({
   const [tab, setTab] = useState<TabKey>("queue");
   const [cols, setCols] = useState<Record<ColKey, number>>(() => loadCols());
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  const [menu, setMenu] = useState<{
+    x: number;
+    y: number;
+    rowId?: string;
+  } | null>(null);
   const lastClickedRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -153,10 +157,6 @@ export default function TransferQueue({
     setSelected(new Set());
   }
 
-  function selectedEntries(): QueueEntry[] {
-    return entries.filter((e) => selected.has(e.fileId));
-  }
-
   function openContextMenu(e: React.MouseEvent, rowId?: string) {
     e.preventDefault();
     e.stopPropagation();
@@ -166,11 +166,16 @@ export default function TransferQueue({
       setSelected(new Set([rowId]));
       lastClickedRef.current = rowId;
     }
-    setMenu({ x: e.clientX, y: e.clientY });
+    setMenu({ x: e.clientX, y: e.clientY, rowId });
   }
 
   function buildMenuItems(): ContextMenuItem[] {
-    const sel = selectedEntries();
+    // Always act on the right-clicked row even if the selection-state update
+    // from openContextMenu hasn't flushed yet (frequent re-renders during an
+    // active transfer can otherwise leave `selected` momentarily empty).
+    const targetIds = new Set(selected);
+    if (menu?.rowId) targetIds.add(menu.rowId);
+    const sel = entries.filter((e) => targetIds.has(e.fileId));
     const items: ContextMenuItem[] = [];
     const activeIds = sel
       .filter((e) => e.status === "active" || e.status === "queued")
