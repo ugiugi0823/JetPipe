@@ -37,14 +37,14 @@ const TABS: { key: TabKey; label: string }[] = [
 ];
 
 const DEFAULT_COLS: Record<ColKey, number> = {
-  source: 240,
-  dir: 52,
-  dest: 240,
-  size: 90,
-  status: 140,
+  source: 260,
+  dir: 60,
+  dest: 260,
+  size: 100,
+  status: 150,
 };
 const MIN_COL = 40;
-const COL_STORAGE_KEY = "jetpipe.transferQueueCols.v2";
+const COL_STORAGE_KEY = "jetpipe.transferQueueCols.v3";
 
 function loadCols(): Record<ColKey, number> {
   try {
@@ -218,7 +218,10 @@ export default function TransferQueue({
     return items;
   }
 
-  const template = `${cols.source}px ${cols.dir}px ${cols.dest}px ${cols.size}px ${cols.status}px`;
+  // Status is the flexible last column (min = stored width) so it absorbs
+  // leftover window width. The earlier columns stay fixed/left-packed and
+  // their headers line up cleanly above the data instead of floating.
+  const template = `${cols.source}px ${cols.dir}px ${cols.dest}px ${cols.size}px minmax(${cols.status}px, 1fr)`;
 
   return (
     <div
