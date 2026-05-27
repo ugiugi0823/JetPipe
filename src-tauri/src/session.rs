@@ -1,3 +1,4 @@
+use crate::conn::{local_home, Connection};
 use crate::error::{JetError, JetResult};
 use crate::ssh::{ConnectRequest, RemoteEntry, SshConnection};
 use parking_lot::RwLock;
@@ -13,10 +14,12 @@ pub struct SessionInfo {
     pub port: u16,
     pub username: String,
     pub home: String,
+    /// "remote" | "local"
+    pub kind: String,
 }
 
 pub struct SessionStore {
-    inner: RwLock<HashMap<String, Arc<SshConnection>>>,
+    inner: RwLock<HashMap<String, Arc<Connection>>>,
     meta: RwLock<HashMap<String, SessionInfo>>,
 }
 
@@ -28,7 +31,7 @@ impl SessionStore {
         }
     }
 
-    pub fn add(&self, conn: SshConnection, info: SessionInfo) {
+    pub fn add(&self, conn: Connection, info: SessionInfo) {
         let id = info.id.clone();
         self.inner.write().insert(id.clone(), Arc::new(conn));
         self.meta.write().insert(id, info);
@@ -39,7 +42,7 @@ impl SessionStore {
         self.meta.write().remove(id);
     }
 
-    pub fn get(&self, id: &str) -> JetResult<Arc<SshConnection>> {
+    pub fn get(&self, id: &str) -> JetResult<Arc<Connection>> {
         self.inner
             .read()
             .get(id)
@@ -71,8 +74,28 @@ pub fn cmd_connect(
         port: req.port,
         username: req.username.clone(),
         home,
+        kind: "remote".into(),
     };
-    store.add(conn, info.clone());
+    store.add(Connection::Remote(conn), info.clone());
+    Ok(info)
+}
+
+/// Register a local-filesystem "connection". No auth/handshake — it just
+/// hands back a session id whose operations route to the local disk.
+#[tauri::command]
+pub fn cmd_connect_local(
+    store: tauri::State<'_, Arc<SessionStore>>,
+) -> JetResult<SessionInfo> {
+    let home = local_home();
+    let info = SessionInfo {
+        id: Uuid::new_v4().to_string(),
+        host: "localhost".into(),
+        port: 0,
+        username: "local".into(),
+        home,
+        kind: "local".into(),
+    };
+    store.add(Connection::Local, info.clone());
     Ok(info)
 }
 
@@ -104,8 +127,7 @@ pub fn cmd_mkdir(
     path: String,
 ) -> JetResult<()> {
     let conn = store.get(&id)?;
-    conn.sftp().mkdir(std::path::Path::new(&path), 0o755)?;
-    Ok(())
+    conn.mkdir(&path)
 }
 
 #[tauri::command]
@@ -116,13 +138,7 @@ pub fn cmd_rename(
     to: String,
 ) -> JetResult<()> {
     let conn = store.get(&id)?;
-    // None for flags = default behavior (overwrite-if-allowed by server).
-    conn.sftp().rename(
-        std::path::Path::new(&from),
-        std::path::Path::new(&to),
-        None,
-    )?;
-    Ok(())
+    conn.rename(&from, &to)
 }
 
 #[tauri::command]
@@ -132,37 +148,5 @@ pub fn cmd_delete(
     path: String,
 ) -> JetResult<()> {
     let conn = store.get(&id)?;
-    // Use lstat semantics (don't follow symlinks): readdir/lstat-based
-    // checks ensure we unlink a symlink-to-dir rather than recursing into it.
-    let lstat = conn.sftp().lstat(std::path::Path::new(&path))?;
-    let ft = lstat.file_type();
-    if ft == ssh2::FileType::Directory {
-        delete_dir_recursive(&conn, &path)?;
-    } else {
-        conn.sftp().unlink(std::path::Path::new(&path))?;
-    }
-    Ok(())
-}
-
-fn delete_dir_recursive(conn: &crate::ssh::SshConnection, path: &str) -> JetResult<()> {
-    let entries = conn.sftp().readdir(std::path::Path::new(path))?;
-    for (entry_path, stat) in entries {
-        let name = entry_path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("");
-        if name == "." || name == ".." {
-            continue;
-        }
-        let sp = entry_path.to_string_lossy().into_owned();
-        // readdir returns lstat — symlinks-to-dirs are NOT seen as directories,
-        // so we correctly `unlink` them instead of descending.
-        if stat.file_type() == ssh2::FileType::Directory {
-            delete_dir_recursive(conn, &sp)?;
-        } else {
-            conn.sftp().unlink(&entry_path)?;
-        }
-    }
-    conn.sftp().rmdir(std::path::Path::new(path))?;
-    Ok(())
+    conn.delete(&path)
 }

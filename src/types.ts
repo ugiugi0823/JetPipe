@@ -21,6 +21,8 @@ export interface LiveSession {
   port: number;
   username: string;
   home: string;
+  /** "remote" | "local" */
+  kind?: string;
 }
 
 export interface RemoteEntry {

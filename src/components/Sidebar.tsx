@@ -13,6 +13,7 @@ import {
   PanelLeftOpen,
   Pencil,
   Settings,
+  Monitor,
 } from "lucide-react";
 import SettingsDialog from "./SettingsDialog";
 import type { LiveSession, PanelSide, SavedSession } from "../types";
@@ -27,8 +28,11 @@ interface Props {
   onEditSession: (saved: SavedSession) => void;
   onDeleteSession: (id: string) => void;
   onConnect: (saved: SavedSession, side: PanelSide) => void;
+  onConnectLocal: (side: PanelSide) => void;
   onDisconnect: (side: PanelSide) => void;
 }
+
+const LOCAL_ID = "__local__";
 
 const COLLAPSE_KEY = "jetpipe.sidebar.collapsed";
 
@@ -41,6 +45,7 @@ export default function Sidebar({
   onEditSession,
   onDeleteSession,
   onConnect,
+  onConnectLocal,
   onDisconnect,
 }: Props) {
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -166,6 +171,64 @@ export default function Sidebar({
       </div>
 
       <div className="flex-1 overflow-y-auto px-2 pb-3 space-y-1">
+        {/* Local PC — always available, no auth. Connects the local
+            filesystem into a panel via the same left/right buttons. */}
+        <div
+          className={cn(
+            "group rounded-md border px-2.5 py-2 transition",
+            liveByPanel.left?.id === LOCAL_ID || liveByPanel.right?.id === LOCAL_ID
+              ? "border-brand/40 bg-brand/5"
+              : "border-edge/60 hover:border-edge hover:bg-surface/50"
+          )}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <Monitor
+              size={14}
+              className={cn(
+                "shrink-0",
+                liveByPanel.left?.id === LOCAL_ID ||
+                  liveByPanel.right?.id === LOCAL_ID
+                  ? "text-brand"
+                  : "text-ink-muted"
+              )}
+            />
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-medium truncate">로컬 PC</div>
+              <div className="text-[10px] text-ink-faint truncate font-mono">
+                내 컴퓨터 파일시스템
+              </div>
+            </div>
+          </div>
+          <div className="mt-2 flex items-center gap-1">
+            <button
+              disabled={connectingPanel !== null}
+              onClick={() => onConnectLocal("left")}
+              className={cn(
+                "flex-1 text-[10px] px-1.5 py-1 rounded transition border",
+                liveByPanel.left?.id === LOCAL_ID
+                  ? "border-brand/40 bg-brand/10 text-brand"
+                  : "border-edge hover:border-edge hover:bg-surface text-ink-muted"
+              )}
+            >
+              {liveByPanel.left?.id === LOCAL_ID ? "← 연결됨" : "← left"}
+            </button>
+            <button
+              disabled={connectingPanel !== null}
+              onClick={() => onConnectLocal("right")}
+              className={cn(
+                "flex-1 text-[10px] px-1.5 py-1 rounded transition border",
+                liveByPanel.right?.id === LOCAL_ID
+                  ? "border-brand/40 bg-brand/10 text-brand"
+                  : "border-edge hover:border-edge hover:bg-surface text-ink-muted"
+              )}
+            >
+              {liveByPanel.right?.id === LOCAL_ID ? "연결됨 →" : "right →"}
+            </button>
+          </div>
+        </div>
+
+        <div className="h-px bg-edge/50 my-1.5" />
+
         {vault.length === 0 && (
           <div className="text-xs text-ink-faint p-4 text-center leading-relaxed">
             저장된 세션이 없습니다.

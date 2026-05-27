@@ -11,11 +11,15 @@ import type { LiveSession, PanelSide, QueueEntry, SavedSession } from "./types";
 import {
   cancelTransfer,
   connect,
+  connectLocal,
   disconnect,
   onEnqueue,
   onFileProgress,
   pipeTransfer,
 } from "./lib/api";
+
+const LOCAL_SAVED_ID = "__local__";
+const LOCAL_LABEL = "로컬 PC";
 import {
   deleteSession,
   loadVault,
@@ -154,6 +158,26 @@ export default function App() {
     } catch (e: any) {
       devlog.error(`handleConnect:failed ${side}`, e?.message ?? e);
       pushErrorRow(`연결 실패: ${e?.message ?? e}`);
+    } finally {
+      setConnecting(null);
+    }
+  }
+
+  // Connect the local filesystem into the active workspace's panel side.
+  async function handleConnectLocal(side: PanelSide) {
+    const wsId = activeWsId;
+    setConnecting(side);
+    try {
+      const ws = workspaces.find((w) => w.id === wsId);
+      const prior = ws?.[side];
+      if (prior) await disconnect(prior.live.id).catch(() => {});
+      const ls = await connectLocal();
+      patchWorkspace(wsId, (w) => ({
+        ...w,
+        [side]: { live: ls, savedId: LOCAL_SAVED_ID, label: LOCAL_LABEL },
+      }));
+    } catch (e: any) {
+      pushErrorRow(`로컬 연결 실패: ${e?.message ?? e}`);
     } finally {
       setConnecting(null);
     }
@@ -360,6 +384,7 @@ export default function App() {
         }}
         onDeleteSession={handleDeleteSession}
         onConnect={handleConnect}
+        onConnectLocal={handleConnectLocal}
         onDisconnect={handleDisconnect}
       />
 

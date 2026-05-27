@@ -214,4 +214,37 @@ impl SshConnection {
         });
         Ok(out)
     }
+
+    /// Recursively delete a remote path. Directories are emptied then removed;
+    /// symlinks are unlinked (not followed) thanks to lstat-based readdir.
+    pub fn delete_recursive(&self, path: &str) -> JetResult<()> {
+        let lstat = self.sftp.lstat(Path::new(path))?;
+        if lstat.file_type() == FileType::Directory {
+            self.delete_dir_recursive(path)
+        } else {
+            self.sftp.unlink(Path::new(path))?;
+            Ok(())
+        }
+    }
+
+    fn delete_dir_recursive(&self, path: &str) -> JetResult<()> {
+        let entries = self.sftp.readdir(Path::new(path))?;
+        for (entry_path, stat) in entries {
+            let name = entry_path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("");
+            if name == "." || name == ".." {
+                continue;
+            }
+            let sp = entry_path.to_string_lossy().into_owned();
+            if stat.file_type() == FileType::Directory {
+                self.delete_dir_recursive(&sp)?;
+            } else {
+                self.sftp.unlink(&entry_path)?;
+            }
+        }
+        self.sftp.rmdir(Path::new(path))?;
+        Ok(())
+    }
 }

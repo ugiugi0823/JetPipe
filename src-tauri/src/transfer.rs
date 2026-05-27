@@ -1,10 +1,11 @@
+use crate::conn::{walk_tree, Connection};
 use crate::error::{JetError, JetResult};
 use crate::session::SessionStore;
 use crate::ssh::SshConnection;
 use parking_lot::{Mutex, RwLock};
 use serde::{Deserialize, Serialize};
-use ssh2::{FileType, OpenFlags, OpenType};
-use std::collections::{HashMap, HashSet};
+use ssh2::{OpenFlags, OpenType};
+use std::collections::HashMap;
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -112,89 +113,6 @@ pub struct PipeResult {
     pub job_id: String,
     pub bytes_transferred: u64,
     pub elapsed_seconds: f64,
-}
-
-#[derive(Debug, Clone)]
-struct WalkEntry {
-    src: String,
-    dst: String,
-    is_dir: bool,
-    size: u64,
-}
-
-fn walk_remote_tree(
-    conn: &SshConnection,
-    src_root: &str,
-    dst_root: &str,
-) -> JetResult<Vec<WalkEntry>> {
-    let mut out = Vec::new();
-    let mut queue: Vec<(String, String)> = vec![(src_root.to_string(), dst_root.to_string())];
-    // Guard against symlink loops: track canonical paths we've already
-    // descended into (via `realpath`) and refuse to enter them twice.
-    let mut visited: HashSet<String> = HashSet::new();
-    if let Ok(rp) = conn.sftp().realpath(Path::new(src_root)) {
-        visited.insert(rp.to_string_lossy().into_owned());
-    }
-
-    out.push(WalkEntry {
-        src: src_root.to_string(),
-        dst: dst_root.to_string(),
-        is_dir: true,
-        size: 0,
-    });
-
-    while let Some((src_dir, dst_dir)) = queue.pop() {
-        let entries = conn.sftp().readdir(Path::new(&src_dir))?;
-        for (path, stat) in entries {
-            let name = match path.file_name().and_then(|n| n.to_str()) {
-                Some(n) if n != "." && n != ".." => n.to_string(),
-                _ => continue,
-            };
-            let sp = path.to_string_lossy().into_owned();
-            let dp = format!("{}/{}", dst_dir.trim_end_matches('/'), name);
-
-            // Resolve symlinks so link-to-dir is treated as a directory and
-            // link-to-file flows through the file branch with the target's
-            // real size. Failures leave the lstat result untouched (dangling
-            // links surface later as "open src" errors and get skipped).
-            let mut is_dir = stat.is_dir();
-            let mut size = stat.size.unwrap_or(0);
-            if stat.file_type() == FileType::Symlink {
-                if let Ok(target) = conn.sftp().stat(&path) {
-                    is_dir = target.is_dir();
-                    size = target.size.unwrap_or(size);
-                }
-            }
-
-            if is_dir {
-                // Avoid descending into a symlink loop.
-                let canonical = conn
-                    .sftp()
-                    .realpath(Path::new(&sp))
-                    .ok()
-                    .map(|p| p.to_string_lossy().into_owned())
-                    .unwrap_or_else(|| sp.clone());
-                if !visited.insert(canonical) {
-                    continue; // already visited via another path
-                }
-                out.push(WalkEntry {
-                    src: sp.clone(),
-                    dst: dp.clone(),
-                    is_dir: true,
-                    size: 0,
-                });
-                queue.push((sp, dp));
-            } else {
-                out.push(WalkEntry {
-                    src: sp,
-                    dst: dp,
-                    is_dir: false,
-                    size,
-                });
-            }
-        }
-    }
-    Ok(out)
 }
 
 fn emit_progress(app: &tauri::AppHandle, evt: FileProgressEvent) {
@@ -367,11 +285,12 @@ fn copy_file(
     }
 }
 
-/// Open up to `extra_count` additional connections cloned from `base`.
-/// Best-effort: stops early if a clone fails (returns whatever we got).
-fn open_extras(base: &Arc<SshConnection>, extra_count: usize) -> Vec<Arc<SshConnection>> {
-    let mut out = Vec::with_capacity(extra_count);
-    for _ in 0..extra_count {
+/// Open up to `count` connections cloned from `base` (each a fresh SSH
+/// session sharing the same credentials). Best-effort: stops at the first
+/// failure and returns whatever opened.
+fn open_clones(base: &SshConnection, count: usize) -> Vec<Arc<SshConnection>> {
+    let mut out = Vec::with_capacity(count);
+    for _ in 0..count {
         match base.open_clone() {
             Ok(c) => out.push(Arc::new(c)),
             Err(_) => break,
@@ -380,32 +299,121 @@ fn open_extras(base: &Arc<SshConnection>, extra_count: usize) -> Vec<Arc<SshConn
     out
 }
 
-/// Build a balanced pool: same-length src/dst stream pairs.
-fn build_pool(
-    src: &Arc<SshConnection>,
-    dst: &Arc<SshConnection>,
-    desired: usize,
-) -> StreamPool {
-    let extras = desired.saturating_sub(1);
-    let src_extras = open_extras(src, extras);
-    let dst_extras = open_extras(dst, extras);
-    let n = 1 + src_extras.len().min(dst_extras.len());
-    let mut pool: StreamPool = vec![(Arc::clone(src), Arc::clone(dst))];
-    for i in 0..(n - 1) {
-        pool.push((src_extras[i].clone(), dst_extras[i].clone()));
+/// Single-threaded buffered copy that works for ANY connection pair
+/// (local↔remote, remote↔local, local↔local). Local disk I/O isn't the
+/// bottleneck, so we skip the remote↔remote pipelining/chunking machinery
+/// here and just stream through one RAM buffer with progress + cancel.
+fn copy_file_simple(
+    app: &tauri::AppHandle,
+    src: &Connection,
+    dst: &Connection,
+    job_id: &str,
+    file: &EnqueuedFile,
+    cancel_token: &Arc<AtomicBool>,
+) -> Result<u64, String> {
+    emit_progress(
+        app,
+        FileProgressEvent {
+            job_id: job_id.to_string(),
+            file_id: file.file_id.clone(),
+            bytes: 0,
+            total: file.size,
+            bps: 0.0,
+            status: "active",
+            error: None,
+        },
+    );
+
+    let start = Instant::now();
+    let outcome: Result<u64, String> = (|| {
+        let mut reader = src.open_reader(&file.source)?;
+        let mut writer = dst.open_writer(&file.dest)?;
+        let mut buf = vec![0u8; CHUNK_SIZE];
+        let mut transferred: u64 = 0;
+        let mut last_emit = Instant::now();
+        loop {
+            if cancel_token.load(Ordering::Relaxed) {
+                return Err("cancelled".to_string());
+            }
+            let n = reader
+                .read(&mut buf)
+                .map_err(|e| format!("read failed: {e}"))?;
+            if n == 0 {
+                break;
+            }
+            writer
+                .write_all(&buf[..n])
+                .map_err(|e| format!("write failed: {e}"))?;
+            transferred += n as u64;
+
+            if last_emit.elapsed().as_millis() >= 100 {
+                let elapsed = start.elapsed().as_secs_f64().max(0.001);
+                emit_progress(
+                    app,
+                    FileProgressEvent {
+                        job_id: job_id.to_string(),
+                        file_id: file.file_id.clone(),
+                        bytes: transferred,
+                        total: file.size,
+                        bps: transferred as f64 / elapsed,
+                        status: "active",
+                        error: None,
+                    },
+                );
+                last_emit = Instant::now();
+            }
+        }
+        writer.flush().map_err(|e| format!("flush failed: {e}"))?;
+        Ok(transferred)
+    })();
+
+    match outcome {
+        Ok(transferred) => {
+            let elapsed = start.elapsed().as_secs_f64().max(0.001);
+            emit_progress(
+                app,
+                FileProgressEvent {
+                    job_id: job_id.to_string(),
+                    file_id: file.file_id.clone(),
+                    bytes: transferred,
+                    total: file.size,
+                    bps: transferred as f64 / elapsed,
+                    status: "done",
+                    error: None,
+                },
+            );
+            Ok(transferred)
+        }
+        Err(reason) => {
+            dst.unlink_quiet(&file.dest);
+            let cancelled = reason == "cancelled";
+            emit_progress(
+                app,
+                FileProgressEvent {
+                    job_id: job_id.to_string(),
+                    file_id: file.file_id.clone(),
+                    bytes: 0,
+                    total: file.size,
+                    bps: 0.0,
+                    status: if cancelled { "cancelled" } else { "failed" },
+                    error: if cancelled { None } else { Some(reason.clone()) },
+                },
+            );
+            Err(reason)
+        }
     }
-    pool
 }
 
-/// Stream a file or directory tree from one SFTP server to another.
+/// Stream a file or directory tree between two endpoints (each either a
+/// remote SFTP server or the local machine).
 ///
 /// Emits `transfer:enqueue` once with the full file plan, then a stream of
 /// `transfer:file` events per file (status: queued → active → done/failed).
 ///
-/// Spawns up to `PARALLEL_STREAMS` extra SSH connections per side and uses
-/// them to parallelize:
-///   - directory transfers: file-level parallelism (workers pull from queue)
-///   - large single files: byte-range chunk parallelism within the file
+/// Fast path (both endpoints remote): spins up `PARALLEL_STREAMS` extra SSH
+/// sessions and uses byte-range chunk parallelism (large single file) or
+/// file-level parallelism (directories), each stream pipelined.
+/// Otherwise (any local endpoint): a single buffered copy per file.
 #[tauri::command]
 pub async fn cmd_pipe_transfer(
     app: tauri::AppHandle,
@@ -422,19 +430,19 @@ pub async fn cmd_pipe_transfer(
     let src_path = req.source_path.clone();
     let dst_path = req.dest_path.clone();
 
-    let src_stat = match src.sftp().stat(Path::new(&src_path)) {
-        Ok(s) => s,
+    let src_is_dir = match src.is_dir(&src_path) {
+        Ok(v) => v,
         Err(e) => {
             cancels.unregister(&job_id);
-            return Err(JetError::Ssh(e));
+            return Err(e);
         }
     };
 
     let start = Instant::now();
 
-    // Build the file plan + create destination directory structure.
-    let files: Vec<EnqueuedFile> = if src_stat.is_dir() {
-        let walk = match walk_remote_tree(&src, &src_path, &dst_path) {
+    // Build the file plan + create the destination directory skeleton.
+    let files: Vec<EnqueuedFile> = if src_is_dir {
+        let walk = match walk_tree(&src, &src_path, &dst_path) {
             Ok(v) => v,
             Err(e) => {
                 cancels.unregister(&job_id);
@@ -448,9 +456,9 @@ pub async fn cmd_pipe_transfer(
         file_entries.sort_by_key(|e| e.size);
 
         // Phase 1: mkdir destination skeleton (parents-before-children
-        // preserved by partition).
+        // preserved by partition; dispatches local vs remote).
         for d in &dirs {
-            let _ = dst.sftp().mkdir(Path::new(&d.dst), 0o755);
+            dst.mkdir_best_effort(&d.dst);
         }
 
         let root_prefix_len = src_path.trim_end_matches('/').len();
@@ -458,9 +466,7 @@ pub async fn cmd_pipe_transfer(
             .into_iter()
             .map(|e| {
                 let rel = if e.src.len() > root_prefix_len {
-                    e.src[root_prefix_len..]
-                        .trim_start_matches('/')
-                        .to_string()
+                    e.src[root_prefix_len..].trim_start_matches('/').to_string()
                 } else {
                     e.src.clone()
                 };
@@ -479,16 +485,16 @@ pub async fn cmd_pipe_transfer(
             .and_then(|n| n.to_str())
             .unwrap_or("")
             .to_string();
+        let size = src.size(&src_path).unwrap_or(0);
         vec![EnqueuedFile {
             file_id: Uuid::new_v4().to_string(),
             rel: name,
             source: src_path.clone(),
             dest: dst_path.clone(),
-            size: src_stat.size.unwrap_or(0),
+            size,
         }]
     };
 
-    // Emit the full plan upfront so the UI can show queued rows immediately.
     let _ = app.emit(
         "transfer:enqueue",
         EnqueueEvent {
@@ -498,9 +504,6 @@ pub async fn cmd_pipe_transfer(
             files: files.clone(),
         },
     );
-
-    // Emit one "queued" event per file so the UI can render them even if it
-    // missed the enqueue burst due to a render delay.
     for f in &files {
         emit_progress(
             &app,
@@ -516,108 +519,128 @@ pub async fn cmd_pipe_transfer(
         );
     }
 
-    // Decide whether to spin up extras based on the workload. Tiny jobs
-    // would just eat handshake latency, so keep them on the single pair.
+    let total_transferred = Arc::new(AtomicU64::new(0));
+    let first_error: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+
+    // Both remote → try the parallel SSH fast path. Any local endpoint, or
+    // failure to open clones, falls back to a simple per-file copy.
+    let both_remote = src.is_remote() && dst.is_remote();
     let total_workload: u64 = files.iter().map(|f| f.size).sum();
     let want_parallel = files.len() > 1
         || files.iter().any(|f| f.size >= CHUNK_PARALLEL_THRESHOLD)
         || total_workload >= CHUNK_PARALLEL_THRESHOLD;
-    let pool: StreamPool = if want_parallel {
-        build_pool(&src, &dst, PARALLEL_STREAMS)
+
+    let pool: Option<StreamPool> = if both_remote {
+        let src_ssh = src.as_remote().unwrap();
+        let dst_ssh = dst.as_remote().unwrap();
+        let n = if want_parallel { PARALLEL_STREAMS } else { 1 };
+        let src_streams = open_clones(src_ssh, n);
+        let dst_streams = open_clones(dst_ssh, n);
+        let count = src_streams.len().min(dst_streams.len());
+        if count >= 1 {
+            Some(
+                (0..count)
+                    .map(|i| (src_streams[i].clone(), dst_streams[i].clone()))
+                    .collect(),
+            )
+        } else {
+            None // clone failed entirely → simple path on the originals
+        }
     } else {
-        vec![(Arc::clone(&src), Arc::clone(&dst))]
+        None
     };
 
-    let total_transferred = Arc::new(AtomicU64::new(0));
-    let first_error: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
-
-    if files.len() == 1 && pool.len() > 1 && files[0].size >= CHUNK_PARALLEL_THRESHOLD
-    {
-        // Single large file: byte-range chunk parallelism across the pool.
-        let f = &files[0];
-        match copy_file_chunked(&app, &pool, &job_id, f, &cancel_token) {
-            Ok(n) => {
-                total_transferred.fetch_add(n, Ordering::Relaxed);
-            }
-            Err(e) => {
-                *first_error.lock() = Some(e);
-            }
-        }
-    } else if pool.len() > 1 && files.len() > 1 {
-        // Directory (multi-file): worker pool drains a shared queue.
-        // Files are sorted smallest→largest, but `Vec::pop()` returns the
-        // last element. Reversing here puts the smallest file at the back
-        // so workers grab them first — quick wins land in the queue UI fast
-        // and the big files get the tail end where partial-cancel hurts least.
-        let mut queue_vec = files.clone();
-        queue_vec.reverse();
-        let queue = Arc::new(Mutex::new(queue_vec));
-        thread::scope(|s| {
-            for (src_p, dst_p) in pool.iter() {
-                let queue = Arc::clone(&queue);
-                let total_transferred = Arc::clone(&total_transferred);
-                let first_error = Arc::clone(&first_error);
-                let app_ref = &app;
-                let job_id_ref = &job_id;
-                let cancel_ref = &cancel_token;
-                let src_w = Arc::clone(src_p);
-                let dst_w = Arc::clone(dst_p);
-                s.spawn(move || loop {
-                    if cancel_ref.load(Ordering::Relaxed) {
-                        return;
-                    }
-                    let next = queue.lock().pop();
-                    let f = match next {
-                        Some(v) => v,
-                        None => return,
-                    };
-                    match copy_file(
-                        app_ref,
-                        &src_w,
-                        &dst_w,
-                        job_id_ref,
-                        &f,
-                        cancel_ref,
-                    ) {
-                        Ok(n) => {
-                            total_transferred.fetch_add(n, Ordering::Relaxed);
-                        }
-                        Err(reason) => {
-                            let mut err = first_error.lock();
-                            if err.is_none() {
-                                *err = Some(reason);
-                            }
-                        }
-                    }
-                });
-            }
-        });
-    } else {
-        // Single small file (or pool of size 1): existing pipelined copy.
-        for f in &files {
-            if cancel_token.load(Ordering::Relaxed) {
-                emit_progress(
-                    &app,
-                    FileProgressEvent {
-                        job_id: job_id.clone(),
-                        file_id: f.file_id.clone(),
-                        bytes: 0,
-                        total: f.size,
-                        bps: 0.0,
-                        status: "cancelled",
-                        error: None,
-                    },
-                );
-                continue;
-            }
-            match copy_file(&app, &pool[0].0, &pool[0].1, &job_id, f, &cancel_token) {
+    match &pool {
+        Some(pool)
+            if files.len() == 1
+                && pool.len() > 1
+                && files[0].size >= CHUNK_PARALLEL_THRESHOLD =>
+        {
+            // Single large file: byte-range chunk parallelism.
+            match copy_file_chunked(&app, pool, &job_id, &files[0], &cancel_token) {
                 Ok(n) => {
                     total_transferred.fetch_add(n, Ordering::Relaxed);
                 }
-                Err(reason) => {
-                    let mut err = first_error.lock();
-                    if err.is_none() {
-                        *err = Some(reason);
+                Err(e) => *first_error.lock() = Some(e),
+            }
+        }
+        Some(pool) if pool.len() > 1 && files.len() > 1 => {
+            // Directory: worker pool drains a shared queue (smallest first).
+            let mut queue_vec = files.clone();
+            queue_vec.reverse();
+            let queue = Arc::new(Mutex::new(queue_vec));
+            thread::scope(|s| {
+                for (src_p, dst_p) in pool.iter() {
+                    let queue = Arc::clone(&queue);
+                    let total_transferred = Arc::clone(&total_transferred);
+                    let first_error = Arc::clone(&first_error);
+                    let app_ref = &app;
+                    let job_id_ref = &job_id;
+                    let cancel_ref = &cancel_token;
+                    let src_w = Arc::clone(src_p);
+                    let dst_w = Arc::clone(dst_p);
+                    s.spawn(move || loop {
+                        if cancel_ref.load(Ordering::Relaxed) {
+                            return;
+                        }
+                        let f = match queue.lock().pop() {
+                            Some(v) => v,
+                            None => return,
+                        };
+                        match copy_file(app_ref, &src_w, &dst_w, job_id_ref, &f, cancel_ref) {
+                            Ok(n) => {
+                                total_transferred.fetch_add(n, Ordering::Relaxed);
+                            }
+                            Err(reason) => {
+                                let mut err = first_error.lock();
+                                if err.is_none() {
+                                    *err = Some(reason);
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+        }
+        Some(pool) => {
+            // Remote↔remote single small file: one pipelined stream.
+            for f in &files {
+                if cancel_token.load(Ordering::Relaxed) {
+                    mark_cancelled(&app, &job_id, f);
+                    continue;
+                }
+                match copy_file(&app, &pool[0].0, &pool[0].1, &job_id, f, &cancel_token) {
+                    Ok(n) => {
+                        total_transferred.fetch_add(n, Ordering::Relaxed);
+                    }
+                    Err(reason) => {
+                        let mut err = first_error.lock();
+                        if err.is_none() {
+                            *err = Some(reason);
+                        }
+                    }
+                }
+            }
+        }
+        None => {
+            // Any local endpoint (or clone failure): simple buffered copy,
+            // smallest first.
+            let mut ordered = files.clone();
+            ordered.sort_by_key(|f| f.size);
+            for f in &ordered {
+                if cancel_token.load(Ordering::Relaxed) {
+                    mark_cancelled(&app, &job_id, f);
+                    continue;
+                }
+                match copy_file_simple(&app, &src, &dst, &job_id, f, &cancel_token) {
+                    Ok(n) => {
+                        total_transferred.fetch_add(n, Ordering::Relaxed);
+                    }
+                    Err(reason) => {
+                        let mut err = first_error.lock();
+                        if err.is_none() {
+                            *err = Some(reason);
+                        }
                     }
                 }
             }
@@ -638,6 +661,21 @@ pub async fn cmd_pipe_transfer(
             elapsed_seconds: elapsed,
         })
     }
+}
+
+fn mark_cancelled(app: &tauri::AppHandle, job_id: &str, f: &EnqueuedFile) {
+    emit_progress(
+        app,
+        FileProgressEvent {
+            job_id: job_id.to_string(),
+            file_id: f.file_id.clone(),
+            bytes: 0,
+            total: f.size,
+            bps: 0.0,
+            status: "cancelled",
+            error: None,
+        },
+    );
 }
 
 /// Byte-range chunk parallel transfer of a single large file across an

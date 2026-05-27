@@ -120,6 +120,10 @@ export async function connect(args: {
   });
 }
 
+export async function connectLocal(): Promise<LiveSession> {
+  return invoke<LiveSession>("cmd_connect_local", {});
+}
+
 export async function disconnect(id: string): Promise<void> {
   await invoke("cmd_disconnect", { id });
 }

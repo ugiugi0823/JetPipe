@@ -1,3 +1,4 @@
+mod conn;
 mod error;
 mod keychain;
 mod session;
@@ -18,6 +19,7 @@ pub fn run() {
         .manage(cancels)
         .invoke_handler(tauri::generate_handler![
             session::cmd_connect,
+            session::cmd_connect_local,
             session::cmd_disconnect,
             session::cmd_list_dir,
             session::cmd_list_sessions,
