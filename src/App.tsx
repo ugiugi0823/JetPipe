@@ -70,7 +70,15 @@ export default function App() {
   const [showImport, setShowImport] = useState(false);
   const [queue, setQueue] = useState<QueueEntry[]>([]);
   const jobMeta = useRef<
-    Map<string, { sourceSide: PanelSide; destSide: PanelSide }>
+    Map<
+      string,
+      {
+        sourceSide: PanelSide;
+        destSide: PanelSide;
+        sourceKind?: string;
+        destKind?: string;
+      }
+    >
   >(new Map());
   const [queueHeight, setQueueHeight] = useState(260);
   const mainRef = useRef<HTMLDivElement>(null);
@@ -114,6 +122,8 @@ export default function App() {
             ...f,
             sourceSide: meta?.sourceSide,
             destSide: meta?.destSide,
+            sourceKind: meta?.sourceKind,
+            destKind: meta?.destKind,
           })),
         ];
       });
@@ -262,7 +272,12 @@ export default function App() {
     if (!target) return;
     const destPath = joinPath(destDir, sourceName);
     const jobId = crypto.randomUUID();
-    jobMeta.current.set(jobId, { sourceSide, destSide: targetSide });
+    jobMeta.current.set(jobId, {
+      sourceSide,
+      destSide: targetSide,
+      sourceKind: ws?.[sourceSide]?.live.kind ?? "remote",
+      destKind: target.live.kind ?? "remote",
+    });
 
     try {
       await pipeTransfer({

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
+  ArrowUp,
+  ArrowDown,
   Ban,
   CheckCircle2,
   Clock,
@@ -26,7 +28,7 @@ interface Props {
 }
 
 type TabKey = "queue" | "failed" | "done";
-type ColKey = "source" | "dest" | "size" | "status";
+type ColKey = "source" | "dir" | "dest" | "size" | "status";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "queue", label: "대기 / 진행" },
@@ -34,15 +36,15 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "done", label: "전송 성공" },
 ];
 
-const ARROW_WIDTH = 24;
 const DEFAULT_COLS: Record<ColKey, number> = {
   source: 240,
+  dir: 52,
   dest: 240,
   size: 90,
   status: 140,
 };
-const MIN_COL = 50;
-const COL_STORAGE_KEY = "jetpipe.transferQueueCols.v1";
+const MIN_COL = 40;
+const COL_STORAGE_KEY = "jetpipe.transferQueueCols.v2";
 
 function loadCols(): Record<ColKey, number> {
   try {
@@ -51,6 +53,7 @@ function loadCols(): Record<ColKey, number> {
     const parsed = JSON.parse(raw);
     return {
       source: Number(parsed.source) || DEFAULT_COLS.source,
+      dir: Number(parsed.dir) || DEFAULT_COLS.dir,
       dest: Number(parsed.dest) || DEFAULT_COLS.dest,
       size: Number(parsed.size) || DEFAULT_COLS.size,
       status: Number(parsed.status) || DEFAULT_COLS.status,
@@ -215,7 +218,7 @@ export default function TransferQueue({
     return items;
   }
 
-  const template = `${cols.source}px ${ARROW_WIDTH}px ${cols.dest}px ${cols.size}px ${cols.status}px`;
+  const template = `${cols.source}px ${cols.dir}px ${cols.dest}px ${cols.size}px ${cols.status}px`;
 
   return (
     <div
@@ -225,11 +228,15 @@ export default function TransferQueue({
       {/* Column headers */}
       <div
         style={{ gridTemplateColumns: template }}
-        className="grid gap-2 px-3 py-1.5 border-b border-edge text-[10px] uppercase tracking-wider text-ink-faint shrink-0"
+        className="grid gap-2 px-3 py-1.5 border-b border-edge text-[10px] uppercase tracking-wider text-ink-faint shrink-0 items-center"
       >
-        <HeaderCell label="소스 파일" onResize={(dx) => resizeCol("source", dx)} />
-        <div className="text-center">방향</div>
-        <HeaderCell label="원격 파일" onResize={(dx) => resizeCol("dest", dx)} />
+        <HeaderCell label="소스" onResize={(dx) => resizeCol("source", dx)} />
+        <HeaderCell
+          label="방향"
+          align="center"
+          onResize={(dx) => resizeCol("dir", dx)}
+        />
+        <HeaderCell label="대상" onResize={(dx) => resizeCol("dest", dx)} />
         <HeaderCell
           label="크기"
           align="right"
@@ -330,11 +337,17 @@ function HeaderCell({
   onResize,
 }: {
   label: string;
-  align?: "left" | "right";
+  align?: "left" | "right" | "center";
   onResize?: (dx: number) => void;
 }) {
   return (
-    <div className={cn("relative truncate", align === "right" && "text-right")}>
+    <div
+      className={cn(
+        "relative truncate",
+        align === "right" && "text-right",
+        align === "center" && "text-center"
+      )}
+    >
       {label}
       {onResize && <ColResize onDrag={onResize} />}
     </div>
@@ -426,7 +439,7 @@ function Row({
       onContextMenu={onContextMenu}
       style={{ gridTemplateColumns: template }}
       className={cn(
-        "grid gap-2 px-3 py-1 text-[11px] transition relative cursor-default select-none",
+        "grid gap-2 px-3 py-1 text-[11px] transition relative cursor-default select-none items-center",
         selected
           ? "bg-brand/15 hover:bg-brand/20"
           : "hover:bg-surface/40"
@@ -442,8 +455,14 @@ function Row({
         </span>
         <PathCell path={entry.rel || entry.source} tone="bright" />
       </div>
-      <div className="flex items-center justify-center text-ink-faint">
-        <ArrowRight size={10} />
+      <div
+        className="flex items-center justify-center"
+        title={directionLabel(entry.sourceKind, entry.destKind)}
+      >
+        <DirectionIcon
+          sourceKind={entry.sourceKind}
+          destKind={entry.destKind}
+        />
       </div>
       <PathCell path={entry.dest} tone="dim" />
       <div
@@ -493,6 +512,30 @@ function Row({
       )}
     </div>
   );
+}
+
+/** Upload (local→remote ⬆), download (remote→local ⬇), or direct (→). */
+function DirectionIcon({
+  sourceKind,
+  destKind,
+}: {
+  sourceKind?: string;
+  destKind?: string;
+}) {
+  if (sourceKind === "local" && destKind === "remote") {
+    return <ArrowUp size={11} className="text-brand" />;
+  }
+  if (sourceKind === "remote" && destKind === "local") {
+    return <ArrowDown size={11} className="text-brand2" />;
+  }
+  return <ArrowRight size={10} className="text-ink-faint" />;
+}
+
+function directionLabel(sourceKind?: string, destKind?: string): string {
+  if (sourceKind === "local" && destKind === "remote") return "업로드 (로컬 → 서버)";
+  if (sourceKind === "remote" && destKind === "local") return "다운로드 (서버 → 로컬)";
+  if (sourceKind === "local" && destKind === "local") return "로컬 복사";
+  return "서버 → 서버 직송";
 }
 
 /**

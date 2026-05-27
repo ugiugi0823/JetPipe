@@ -55,4 +55,7 @@ export interface QueueEntry {
   error?: string;
   sourceSide?: PanelSide;
   destSide?: PanelSide;
+  /** "local" | "remote" — used to render upload/download direction. */
+  sourceKind?: string;
+  destKind?: string;
 }
