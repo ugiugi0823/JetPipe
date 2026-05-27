@@ -1,7 +1,7 @@
 {
   "name": "jetpipe",
   "private": true,
-  "version": "0.1.22",
+  "version": "0.1.23",
   "type": "module",
   "description": "JetPipe — In-memory streaming SFTP pipeline. Direct server-to-server file transfer without touching local disk.",
   "scripts": {
