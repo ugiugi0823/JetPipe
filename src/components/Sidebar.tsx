@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { devlog, hardLog } from "../lib/devlog";
 import {
-  Plug,
+  X,
   Plus,
   Server,
   Trash2,
@@ -301,10 +301,11 @@ export default function Sidebar({
               {live && (
                 <button
                   onClick={() => onDisconnect(side)}
-                  className="text-ink-faint hover:text-rose-400 transition"
-                  title="Disconnect"
+                  className="shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-rose-500/30 text-rose-400 hover:bg-rose-500/15 hover:border-rose-500/50 transition"
+                  title={`${side} 연결 종료`}
                 >
-                  <Plug size={10} />
+                  <X size={10} />
+                  <span className="text-[9px]">종료</span>
                 </button>
               )}
             </div>
