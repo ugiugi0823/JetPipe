@@ -96,13 +96,17 @@ export default function Sidebar({
 
   if (collapsed) {
     return (
-      <aside className="w-11 shrink-0 border-r border-edge/80 bg-base/40 backdrop-blur flex flex-col items-center py-3 gap-1">
-        <div className="w-7 h-7 rounded-md bg-gradient-to-br from-brand to-brand2 flex items-center justify-center text-zinc-950 font-bold mb-1">
-          J
+      <aside className="w-11 shrink-0 border-r border-edge/80 bg-base/40 backdrop-blur flex flex-col items-center">
+        {/* Logo header — its own band so the J sits above the workspace-tab
+            line instead of crossing it. */}
+        <div className="w-full flex items-center justify-center py-1 border-b border-edge shrink-0">
+          <div className="w-7 h-7 rounded-md bg-gradient-to-br from-brand to-brand2 flex items-center justify-center text-zinc-950 font-bold">
+            J
+          </div>
         </div>
         <button
           onClick={() => setCollapsed(false)}
-          className="text-ink-muted hover:text-ink p-1.5 rounded transition"
+          className="mt-2 text-ink-muted hover:text-ink p-1.5 rounded transition"
           title={t("expandSidebar")}
         >
           <PanelLeftOpen size={14} />
@@ -137,7 +141,7 @@ export default function Sidebar({
         </button>
         <div className="flex-1" />
         <div
-          className="text-[9px] font-mono text-ink-faint tabular-nums"
+          className="text-[9px] font-mono text-ink-faint tabular-nums pb-3"
           title={``}
         >
           {vault.length}
