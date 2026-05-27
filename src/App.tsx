@@ -37,6 +37,8 @@ interface PanelConn {
 
 interface Workspace {
   id: string;
+  /** User-set tab name. When empty, a name is derived from the connections. */
+  title?: string;
   left: PanelConn | null;
   right: PanelConn | null;
 }
@@ -47,6 +49,7 @@ function newWorkspace(): Workspace {
 }
 
 function wsTitle(ws: Workspace, index: number): string {
+  if (ws.title && ws.title.trim()) return ws.title;
   if (!ws.left && !ws.right) return `작업 ${index + 1}`;
   const l = ws.left?.label ?? "—";
   const r = ws.right?.label ?? "—";
@@ -59,6 +62,8 @@ export default function App() {
     newWorkspace(),
   ]);
   const [activeWsId, setActiveWsId] = useState<string>(() => workspaces[0].id);
+  const [editingTabId, setEditingTabId] = useState<string | null>(null);
+  const [tabDraft, setTabDraft] = useState("");
   const [connecting, setConnecting] = useState<PanelSide | null>(null);
   const [showDialog, setShowDialog] = useState(false);
   const [editingSession, setEditingSession] = useState<SavedSession | null>(null);
@@ -283,6 +288,23 @@ export default function App() {
     setActiveWsId(ws.id);
   }
 
+  function startRenameTab(ws: Workspace, index: number) {
+    setEditingTabId(ws.id);
+    setTabDraft(ws.title ?? wsTitle(ws, index));
+  }
+
+  function commitRenameTab() {
+    if (!editingTabId) return;
+    const title = tabDraft.trim();
+    patchWorkspace(editingTabId, (w) => ({
+      ...w,
+      // Empty → clear custom title so it falls back to the auto name.
+      title: title || undefined,
+    }));
+    setEditingTabId(null);
+    setTabDraft("");
+  }
+
   async function closeWorkspace(id: string) {
     const ws = workspaces.find((w) => w.id === id);
     if (ws) {
@@ -406,19 +428,39 @@ export default function App() {
         <div className="flex items-center gap-1 px-2 pt-1.5 pb-0 border-b border-edge bg-base/60 shrink-0 overflow-x-auto">
           {workspaces.map((ws, i) => {
             const active = ws.id === activeWsId;
+            const editing = ws.id === editingTabId;
             return (
               <div
                 key={ws.id}
                 onClick={() => setActiveWsId(ws.id)}
+                onDoubleClick={() => startRenameTab(ws, i)}
                 className={cn(
-                  "group flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-t-md cursor-pointer transition border-b-2 max-w-[200px]",
+                  "group flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-t-md cursor-pointer transition border-b-2 max-w-[220px]",
                   active
                     ? "bg-surface/60 border-brand text-ink"
                     : "border-transparent text-ink-muted hover:text-ink hover:bg-surface/30"
                 )}
-                title={wsTitle(ws, i)}
+                title={editing ? undefined : `${wsTitle(ws, i)} · 더블클릭으로 이름 변경`}
               >
-                <span className="text-[11px] truncate">{wsTitle(ws, i)}</span>
+                {editing ? (
+                  <input
+                    autoFocus
+                    value={tabDraft}
+                    onChange={(e) => setTabDraft(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") commitRenameTab();
+                      else if (e.key === "Escape") {
+                        setEditingTabId(null);
+                        setTabDraft("");
+                      }
+                    }}
+                    onBlur={commitRenameTab}
+                    className="text-[11px] bg-base border border-brand/50 rounded px-1 py-0 w-28 outline-none"
+                  />
+                ) : (
+                  <span className="text-[11px] truncate">{wsTitle(ws, i)}</span>
+                )}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
