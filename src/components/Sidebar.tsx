@@ -18,6 +18,7 @@ import {
   Loader2,
   ArrowUp,
   ArrowDown,
+  Gauge,
 } from "lucide-react";
 import SettingsDialog from "./SettingsDialog";
 import type { LiveSession, PanelSide, SavedSession } from "../types";
@@ -206,45 +207,48 @@ export default function Sidebar({
                     <span className="text-[9px]">종료</span>
                   </button>
                 </div>
-                {/* Throughput + re-measure */}
+                {/* Throughput — measured on demand via the button */}
                 <div className="flex items-center gap-2 pl-4 text-[10px]">
                   {sp?.status === "measuring" ? (
                     <span className="flex items-center gap-1 text-ink-faint">
                       <Loader2 size={9} className="animate-spin" /> 측정 중…
                     </span>
                   ) : sp?.status === "done" ? (
-                    <span className="flex items-center gap-1.5 font-mono">
-                      <span
-                        className="flex items-center gap-0.5 text-brand"
-                        title="업로드"
-                      >
-                        <ArrowUp size={9} />
-                        {fmtSpeed(sp.uploadBps)}
+                    <>
+                      <span className="flex items-center gap-1.5 font-mono">
+                        <span
+                          className="flex items-center gap-0.5 text-brand"
+                          title="업로드"
+                        >
+                          <ArrowUp size={9} />
+                          {fmtSpeed(sp.uploadBps)}
+                        </span>
+                        <span
+                          className="flex items-center gap-0.5 text-brand2"
+                          title="다운로드"
+                        >
+                          <ArrowDown size={9} />
+                          {fmtSpeed(sp.downloadBps)}
+                        </span>
                       </span>
-                      <span
-                        className="flex items-center gap-0.5 text-brand2"
-                        title="다운로드"
+                      <button
+                        onClick={() => onSpeedtest(side)}
+                        className="text-ink-faint hover:text-ink transition shrink-0"
+                        title="속도 다시 측정"
                       >
-                        <ArrowDown size={9} />
-                        {fmtSpeed(sp.downloadBps)}
-                      </span>
-                    </span>
-                  ) : sp?.status === "error" ? (
-                    <span className="text-rose-400/80">측정 실패</span>
+                        <RefreshCw size={10} />
+                      </button>
+                    </>
                   ) : (
-                    <span className="text-ink-faint">속도 미측정</span>
+                    <button
+                      onClick={() => onSpeedtest(side)}
+                      className="flex items-center gap-1 px-1.5 py-0.5 rounded border border-edge hover:border-brand/40 hover:bg-surface text-ink-muted hover:text-ink transition"
+                      title="이 연결의 업로드/다운로드 속도 측정"
+                    >
+                      <Gauge size={10} />
+                      <span>{sp?.status === "error" ? "측정 실패 · 다시" : "속도 검사"}</span>
+                    </button>
                   )}
-                  <button
-                    onClick={() => onSpeedtest(side)}
-                    disabled={sp?.status === "measuring"}
-                    className="text-ink-faint hover:text-ink disabled:opacity-40 transition shrink-0"
-                    title="속도 다시 측정"
-                  >
-                    <RefreshCw
-                      size={10}
-                      className={sp?.status === "measuring" ? "animate-spin" : ""}
-                    />
-                  </button>
                 </div>
               </div>
             );

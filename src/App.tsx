@@ -206,8 +206,6 @@ export default function App() {
         ...w,
         [side]: { live: ls, savedId: saved.id, label: saved.label },
       }));
-      // Auto-measure throughput once on connect.
-      void runSpeedtest(ls);
     } catch (e: any) {
       devlog.error(`handleConnect:failed ${side}`, e?.message ?? e);
       pushErrorRow(`연결 실패: ${e?.message ?? e}`);
@@ -229,7 +227,6 @@ export default function App() {
         ...w,
         [side]: { live: ls, savedId: LOCAL_SAVED_ID, label: LOCAL_LABEL },
       }));
-      void runSpeedtest(ls);
     } catch (e: any) {
       pushErrorRow(`로컬 연결 실패: ${e?.message ?? e}`);
     } finally {
