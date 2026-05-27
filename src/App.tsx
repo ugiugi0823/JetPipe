@@ -69,6 +69,15 @@ export default function App() {
   >(new Map());
   const [queueHeight, setQueueHeight] = useState(260);
   const mainRef = useRef<HTMLDivElement>(null);
+  // Per-(workspace,side) refresh counters bumped when a transfer into that
+  // panel finishes, so the destination listing updates without a manual
+  // refresh.
+  const [refreshKeys, setRefreshKeys] = useState<Record<string, number>>({});
+
+  function bumpRefresh(wsId: string, side: PanelSide) {
+    const k = `${wsId}:${side}`;
+    setRefreshKeys((m) => ({ ...m, [k]: (m[k] ?? 0) + 1 }));
+  }
 
   const activeWs =
     workspaces.find((w) => w.id === activeWsId) ?? workspaces[0];
@@ -260,6 +269,10 @@ export default function App() {
       });
     } catch {
       /* per-file errors surface via transfer:file events */
+    } finally {
+      // Job finished (success or fail) — refresh the destination panel so
+      // the newly-written files appear without a manual refresh.
+      bumpRefresh(wsId, targetSide);
     }
   }
 
@@ -446,6 +459,7 @@ export default function App() {
                 compression={
                   !!vault.find((s) => s.id === ws.left?.savedId)?.compression
                 }
+                refreshNonce={refreshKeys[`${ws.id}:left`] ?? 0}
                 onToggleCompression={() => handleToggleCompression("left")}
                 onDropFrom={(sid, sp, sn, isDir, sourceSide, destDir) =>
                   handleDrop(ws.id, "left", sid, sp, sn, isDir, sourceSide, destDir)
@@ -458,6 +472,7 @@ export default function App() {
                 compression={
                   !!vault.find((s) => s.id === ws.right?.savedId)?.compression
                 }
+                refreshNonce={refreshKeys[`${ws.id}:right`] ?? 0}
                 onToggleCompression={() => handleToggleCompression("right")}
                 onDropFrom={(sid, sp, sn, isDir, sourceSide, destDir) =>
                   handleDrop(ws.id, "right", sid, sp, sn, isDir, sourceSide, destDir)

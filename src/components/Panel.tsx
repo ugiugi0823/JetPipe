@@ -29,6 +29,9 @@ interface Props {
   session: LiveSession | null;
   savedId: string | null;
   compression: boolean;
+  /** Incremented by the parent (e.g. when a transfer into this panel
+   *  finishes) to force a re-listing without the user hitting refresh. */
+  refreshNonce?: number;
   onToggleCompression: () => void;
   onDropFrom: (
     sourceSessionId: string,
@@ -62,12 +65,19 @@ export default function Panel({
   session,
   savedId,
   compression,
+  refreshNonce,
   onToggleCompression,
   onDropFrom,
 }: Props) {
   const [selected, setSelected] = useState<string>("/");
   const [pathInput, setPathInput] = useState<string>("/");
   const [refreshTick, setRefreshTick] = useState(0);
+
+  // External refresh trigger (transfer-into-this-panel completed).
+  useEffect(() => {
+    if (refreshNonce === undefined || refreshNonce === 0) return;
+    setRefreshTick((t) => t + 1);
+  }, [refreshNonce]);
   const [dragOver, setDragOver] = useState(false);
   const [newFolder, setNewFolder] = useState<NewFolderRequest | null>(null);
   const [renameTarget, setRenameTarget] = useState<RenameTarget | null>(null);
