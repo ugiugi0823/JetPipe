@@ -3,6 +3,7 @@ import { File as FileIcon, Folder, Pencil, ServerCrash } from "lucide-react";
 import type { LiveSession, PanelSide, RemoteEntry } from "../types";
 import { listDir } from "../lib/api";
 import { cn, formatBytes, formatBytesExact } from "../lib/utils";
+import { useT } from "../lib/i18n";
 
 interface Props {
   side: PanelSide;
@@ -53,6 +54,7 @@ export default function FileList({
   onDropToFolder,
   onDragStartFile,
 }: Props) {
+  const t = useT();
   const [dragOverPath, setDragOverPath] = useState<string | null>(null);
   const [entries, setEntries] = useState<RemoteEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -93,16 +95,16 @@ export default function FileList({
     <div className="h-full flex flex-col">
       {/* Column headers */}
       <div className="grid grid-cols-[1fr_70px_90px_90px] gap-2 px-2 py-1 border-b border-edge text-[10px] uppercase tracking-wider text-ink-faint shrink-0">
-        <div>파일명</div>
-        <div className="text-right">크기</div>
-        <div>파일 유형</div>
-        <div>최종 수정</div>
+        <div>{t("fileName")}</div>
+        <div className="text-right">{t("colSize")}</div>
+        <div>{t("fileType")}</div>
+        <div>{t("modified")}</div>
       </div>
 
       <div className="flex-1 overflow-y-auto">
         {!session && (
           <div className="h-full flex items-center justify-center text-[11px] text-ink-faint">
-            세션 미연결
+            {t("notConnected")}
           </div>
         )}
         {session && error && (
@@ -113,7 +115,7 @@ export default function FileList({
         )}
         {session && !error && entries.length === 0 && !loading && (
           <div className="h-full flex items-center justify-center text-[11px] text-ink-faint">
-            파일 없음
+            {t("noFiles")}
           </div>
         )}
         {session &&
@@ -186,7 +188,7 @@ export default function FileList({
                       onRename(e.path, e.name);
                     }}
                     className="opacity-0 group-hover:opacity-100 text-ink-faint hover:text-brand shrink-0 transition"
-                    title="이름 변경"
+                    title={t("rename")}
                   >
                     <Pencil size={10} />
                   </button>
@@ -200,10 +202,10 @@ export default function FileList({
               </div>
               <div className="text-[10px] text-ink-faint truncate">
                 {e.isDir
-                  ? "폴더"
+                  ? t("folder")
                   : e.name.includes(".")
                   ? e.name.split(".").pop()?.toUpperCase()
-                  : "파일"}
+                  : t("file")}
               </div>
               <div className="text-[10px] text-ink-faint truncate font-mono">
                 {formatDate(e.modified)}
@@ -214,7 +216,7 @@ export default function FileList({
 
       <div className="px-2 py-1 border-t border-edge text-[10px] text-ink-faint font-mono tabular-nums shrink-0">
         {session
-          ? `${fileCount} 파일 / ${dirCount} 디렉토리, 총 ${formatBytesExact(totalFileBytes)} 바이트`
+          ? `${fileCount} ${t("file")} / ${dirCount} ${t("folder")} · ${formatBytesExact(totalFileBytes)} B`
           : "—"}
       </div>
     </div>

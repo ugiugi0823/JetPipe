@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { X, KeyRound, Lock, FileText, Check } from "lucide-react";
 import type { SavedSession } from "../types";
 import { parseSshConfig, toSavedSession, type ParsedHost } from "../lib/sshConfig";
+import { useT } from "../lib/i18n";
 
 const SAMPLE = `Host myhome
   HostName 192.168.0.8
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export default function ImportDialog({ existing, onCancel, onImport }: Props) {
+  const t = useT();
   const [text, setText] = useState("");
   const [selected, setSelected] = useState<Record<string, boolean>>({});
 
@@ -82,13 +84,13 @@ export default function ImportDialog({ existing, onCancel, onImport }: Props) {
         <div className="flex-1 min-h-0 flex">
           <div className="w-1/2 border-r border-edge flex flex-col">
             <div className="px-4 py-2 text-[10px] uppercase tracking-wider text-ink-faint border-b border-edge flex items-center justify-between">
-              <span>~/.ssh/config 내용 붙여넣기</span>
+              <span>{t("pasteSshConfig")}</span>
               {text === "" && (
                 <button
                   onClick={() => setText(SAMPLE)}
                   className="text-brand/70 hover:text-brand normal-case tracking-normal"
                 >
-                  예시 채우기
+                  {t("fillExample")}
                 </button>
               )}
             </div>
@@ -103,7 +105,7 @@ export default function ImportDialog({ existing, onCancel, onImport }: Props) {
 
           <div className="w-1/2 flex flex-col">
             <div className="px-4 py-2 text-[10px] uppercase tracking-wider text-ink-faint border-b border-edge flex items-center justify-between">
-              <span>파싱 결과 ({hosts.length})</span>
+              <span>{t("parseResult")} ({hosts.length})</span>
               {hosts.length > 0 && (
                 <div className="flex gap-2 normal-case tracking-normal">
                   <button
@@ -114,7 +116,7 @@ export default function ImportDialog({ existing, onCancel, onImport }: Props) {
                     }
                     className="text-ink-muted hover:text-ink"
                   >
-                    전체
+                    {t("selAll")}
                   </button>
                   <button
                     onClick={() =>
@@ -124,7 +126,7 @@ export default function ImportDialog({ existing, onCancel, onImport }: Props) {
                     }
                     className="text-ink-muted hover:text-ink"
                   >
-                    해제
+                    {t("clearSel")}
                   </button>
                 </div>
               )}
@@ -132,9 +134,7 @@ export default function ImportDialog({ existing, onCancel, onImport }: Props) {
             <div className="flex-1 overflow-y-auto">
               {hosts.length === 0 ? (
                 <div className="h-full flex items-center justify-center text-xs text-ink-faint px-6 text-center">
-                  왼쪽에 SSH config를 붙여넣으면
-                  <br />
-                  Host 블록이 자동으로 파싱됩니다
+                  {t("importHint")}
                 </div>
               ) : (
                 hosts.map((h) => {
@@ -197,15 +197,15 @@ export default function ImportDialog({ existing, onCancel, onImport }: Props) {
         <footer className="px-5 py-3.5 border-t border-edge flex items-center justify-between">
           <div className="text-[11px] text-ink-faint">
             {chosen.length > 0
-              ? `${chosen.length}개 세션이 추가됩니다`
-              : "선택된 세션이 없습니다"}
+              ? `${chosen.length}${t("sessionsWillAdd")}`
+              : t("noSessionSelected")}
           </div>
           <div className="flex gap-2">
             <button
               onClick={onCancel}
               className="px-3 py-1.5 text-xs rounded border border-edge text-ink-muted hover:text-ink transition"
             >
-              Cancel
+              {t("cancel")}
             </button>
             <button
               onClick={handleImport}

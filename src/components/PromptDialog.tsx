@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
+import { useT } from "../lib/i18n";
 
 interface Props {
   title: string;
@@ -17,10 +18,11 @@ export default function PromptDialog({
   label,
   initialValue = "",
   selectBasename = false,
-  confirmText = "확인",
+  confirmText,
   onCancel,
   onConfirm,
 }: Props) {
+  const tr = useT();
   const [value, setValue] = useState(initialValue);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -99,14 +101,14 @@ export default function PromptDialog({
             onClick={onCancel}
             className="px-3 py-1.5 text-xs rounded border border-edge text-ink-muted hover:text-ink transition"
           >
-            취소
+            {tr("cancel")}
           </button>
           <button
             type="submit"
             disabled={busy || !value.trim()}
             className="px-3 py-1.5 text-xs rounded bg-brand hover:bg-brand disabled:bg-surface disabled:text-ink-faint text-zinc-950 font-medium transition"
           >
-            {busy ? "처리 중…" : confirmText}
+            {busy ? tr("processing") : confirmText ?? tr("confirm")}
           </button>
         </footer>
       </form>

@@ -26,7 +26,6 @@ export interface SpeedState {
 }
 
 const LOCAL_SAVED_ID = "__local__";
-const LOCAL_LABEL = "로컬 PC";
 import {
   deleteSession,
   loadVault,
@@ -35,6 +34,7 @@ import {
 } from "./lib/vault";
 import { cn, joinPath } from "./lib/utils";
 import { devlog } from "./lib/devlog";
+import { useT, t as tr } from "./lib/i18n";
 
 interface PanelConn {
   live: LiveSession;
@@ -57,13 +57,14 @@ function newWorkspace(): Workspace {
 
 function wsTitle(ws: Workspace, index: number): string {
   if (ws.title && ws.title.trim()) return ws.title;
-  if (!ws.left && !ws.right) return `작업 ${index + 1}`;
+  if (!ws.left && !ws.right) return `${tr("workspace")} ${index + 1}`;
   const l = ws.left?.label ?? "—";
   const r = ws.right?.label ?? "—";
   return `${l} ↔ ${r}`;
 }
 
 export default function App() {
+  const t = useT();
   const [vault, setVault] = useState<SavedSession[]>([]);
   const [workspaces, setWorkspaces] = useState<Workspace[]>(() => [
     newWorkspace(),
@@ -89,6 +90,9 @@ export default function App() {
   >(new Map());
   const [queueHeight, setQueueHeight] = useState(260);
   const mainRef = useRef<HTMLDivElement>(null);
+  // Left panel's share of the horizontal space (0-1); right takes the rest.
+  const [panelRatio, setPanelRatio] = useState(0.5);
+  const panelsAreaRef = useRef<HTMLDivElement>(null);
   // Per-(workspace,side) refresh counters bumped when a transfer into that
   // panel finishes, so the destination listing updates without a manual
   // refresh.
@@ -132,6 +136,11 @@ export default function App() {
       const maxH = main ? Math.max(120, main.clientHeight - 160) : 600;
       return Math.max(80, Math.min(maxH, h - dy));
     });
+  }
+
+  function handlePanelSplitterDrag(dx: number) {
+    const w = panelsAreaRef.current?.clientWidth ?? 1;
+    setPanelRatio((r) => Math.max(0.15, Math.min(0.85, r + dx / w)));
   }
 
   useEffect(() => {
@@ -208,7 +217,7 @@ export default function App() {
       }));
     } catch (e: any) {
       devlog.error(`handleConnect:failed ${side}`, e?.message ?? e);
-      pushErrorRow(`연결 실패: ${e?.message ?? e}`);
+      pushErrorRow(`${t("connectFailed")}: ${e?.message ?? e}`);
     } finally {
       setConnecting(null);
     }
@@ -225,10 +234,10 @@ export default function App() {
       const ls = await connectLocal();
       patchWorkspace(wsId, (w) => ({
         ...w,
-        [side]: { live: ls, savedId: LOCAL_SAVED_ID, label: LOCAL_LABEL },
+        [side]: { live: ls, savedId: LOCAL_SAVED_ID, label: tr("localPc") },
       }));
     } catch (e: any) {
-      pushErrorRow(`로컬 연결 실패: ${e?.message ?? e}`);
+      pushErrorRow(`${t("localConnectFailed")}: ${e?.message ?? e}`);
     } finally {
       setConnecting(null);
     }
@@ -490,7 +499,7 @@ export default function App() {
                     ? "bg-surface/60 border-brand text-ink"
                     : "border-transparent text-ink-muted hover:text-ink hover:bg-surface/30"
                 )}
-                title={editing ? undefined : `${wsTitle(ws, i)} · 더블클릭으로 이름 변경`}
+                title={editing ? undefined : `${wsTitle(ws, i)} · ${t("dblClickRename")}`}
               >
                 {editing ? (
                   <input
@@ -518,7 +527,7 @@ export default function App() {
                       startRenameTab(ws, i);
                     }}
                     className="shrink-0 text-ink-faint hover:text-brand opacity-0 group-hover:opacity-100 transition p-0.5 rounded"
-                    title="탭 이름 변경"
+                    title={t("renameTab")}
                   >
                     <Pencil size={10} />
                   </button>
@@ -529,7 +538,7 @@ export default function App() {
                     closeWorkspace(ws.id);
                   }}
                   className="shrink-0 text-ink-faint hover:text-rose-400 opacity-0 group-hover:opacity-100 transition p-0.5 rounded"
-                  title="탭 닫기 (연결 종료)"
+                  title={t("closeTab")}
                 >
                   <X size={11} />
                 </button>
@@ -539,7 +548,7 @@ export default function App() {
           <button
             onClick={addWorkspace}
             className="shrink-0 text-ink-muted hover:text-ink p-1.5 rounded transition"
-            title="새 작업 탭"
+            title={t("newTab")}
           >
             <Plus size={13} />
           </button>
@@ -547,41 +556,51 @@ export default function App() {
 
         {/* All workspaces are mounted; only the active one is shown so each
             keeps its own panel state (path, tree expansion) across switches. */}
-        <div className="flex-1 min-h-0 relative">
+        <div ref={panelsAreaRef} className="flex-1 min-h-0 relative">
           {workspaces.map((ws) => (
             <div
               key={ws.id}
               className={cn(
-                "absolute inset-0 flex gap-3 p-3 min-h-0",
+                "absolute inset-0 flex p-3 min-h-0",
                 ws.id !== activeWsId && "hidden"
               )}
             >
-              <Panel
-                side="left"
-                session={ws.left?.live ?? null}
-                savedId={ws.left?.savedId ?? null}
-                compression={
-                  !!vault.find((s) => s.id === ws.left?.savedId)?.compression
-                }
-                refreshNonce={refreshKeys[`${ws.id}:left`] ?? 0}
-                onToggleCompression={() => handleToggleCompression("left")}
-                onDropFrom={(sid, sp, sn, isDir, sourceSide, destDir) =>
-                  handleDrop(ws.id, "left", sid, sp, sn, isDir, sourceSide, destDir)
-                }
-              />
-              <Panel
-                side="right"
-                session={ws.right?.live ?? null}
-                savedId={ws.right?.savedId ?? null}
-                compression={
-                  !!vault.find((s) => s.id === ws.right?.savedId)?.compression
-                }
-                refreshNonce={refreshKeys[`${ws.id}:right`] ?? 0}
-                onToggleCompression={() => handleToggleCompression("right")}
-                onDropFrom={(sid, sp, sn, isDir, sourceSide, destDir) =>
-                  handleDrop(ws.id, "right", sid, sp, sn, isDir, sourceSide, destDir)
-                }
-              />
+              <div style={{ flex: panelRatio }} className="min-w-0 flex">
+                <Panel
+                  side="left"
+                  session={ws.left?.live ?? null}
+                  savedId={ws.left?.savedId ?? null}
+                  compression={
+                    !!vault.find((s) => s.id === ws.left?.savedId)?.compression
+                  }
+                  refreshNonce={refreshKeys[`${ws.id}:left`] ?? 0}
+                  onToggleCompression={() => handleToggleCompression("left")}
+                  onDropFrom={(sid, sp, sn, isDir, sourceSide, destDir) =>
+                    handleDrop(ws.id, "left", sid, sp, sn, isDir, sourceSide, destDir)
+                  }
+                />
+              </div>
+              <div className="px-1 flex items-stretch shrink-0">
+                <Splitter
+                  orientation="vertical"
+                  onDrag={handlePanelSplitterDrag}
+                />
+              </div>
+              <div style={{ flex: 1 - panelRatio }} className="min-w-0 flex">
+                <Panel
+                  side="right"
+                  session={ws.right?.live ?? null}
+                  savedId={ws.right?.savedId ?? null}
+                  compression={
+                    !!vault.find((s) => s.id === ws.right?.savedId)?.compression
+                  }
+                  refreshNonce={refreshKeys[`${ws.id}:right`] ?? 0}
+                  onToggleCompression={() => handleToggleCompression("right")}
+                  onDropFrom={(sid, sp, sn, isDir, sourceSide, destDir) =>
+                    handleDrop(ws.id, "right", sid, sp, sn, isDir, sourceSide, destDir)
+                  }
+                />
+              </div>
             </div>
           ))}
         </div>

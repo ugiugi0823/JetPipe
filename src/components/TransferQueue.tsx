@@ -17,6 +17,7 @@ import {
 import type { QueueEntry } from "../types";
 import { cn, formatBytes, formatBytesExact, formatSpeed } from "../lib/utils";
 import ContextMenu, { type ContextMenuItem } from "./ContextMenu";
+import { useT, t } from "../lib/i18n";
 
 interface Props {
   entries: QueueEntry[];
@@ -30,10 +31,10 @@ interface Props {
 type TabKey = "queue" | "failed" | "done";
 type ColKey = "source" | "dir" | "dest" | "size" | "status";
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: "queue", label: "대기 / 진행" },
-  { key: "failed", label: "전송 실패" },
-  { key: "done", label: "전송 성공" },
+const TAB_KEYS: { key: TabKey; t: "tabQueue" | "tabFailed" | "tabDone" }[] = [
+  { key: "queue", t: "tabQueue" },
+  { key: "failed", t: "tabFailed" },
+  { key: "done", t: "tabDone" },
 ];
 
 const DEFAULT_COLS: Record<ColKey, number> = {
@@ -77,6 +78,7 @@ export default function TransferQueue({
   onStopAndClearAll,
   onClearTab,
 }: Props) {
+  const t = useT();
   const [tab, setTab] = useState<TabKey>("queue");
   const [cols, setCols] = useState<Record<ColKey, number>>(() => loadCols());
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -183,14 +185,14 @@ export default function TransferQueue({
     if (sel.length > 0) {
       if (activeIds.length > 0) {
         items.push({
-          label: `선택 항목 취소 (${activeIds.length}개)`,
+          label: `${t("cancelSelected")} (${activeIds.length})`,
           icon: Ban,
           onClick: () => onCancelFiles(activeIds),
         });
       }
       if (removableIds.length > 0) {
         items.push({
-          label: `선택 항목 제거 (${removableIds.length}개)`,
+          label: `${t("removeSelected")} (${removableIds.length})`,
           icon: Trash2,
           danger: true,
           onClick: () => onRemoveFiles(removableIds),
@@ -198,19 +200,22 @@ export default function TransferQueue({
       }
     }
     items.push({
-      label: visible.length > 0 ? `현재 탭 전체 선택 (${visible.length})` : "전체 선택",
+      label:
+        visible.length > 0
+          ? `${t("selectAllInTab")} (${visible.length})`
+          : t("selectAll"),
       icon: ListChecks,
       onClick: selectAllInTab,
     });
     if (selected.size > 0) {
       items.push({
-        label: "선택 해제",
+        label: t("deselect"),
         icon: Square,
         onClick: clearSelection,
       });
     }
     items.push({
-      label: hasActive ? "중지 후 모두 제거" : "모두 제거",
+      label: hasActive ? t("stopClearAll") : t("clearAll"),
       icon: OctagonX,
       danger: true,
       onClick: onStopAndClearAll,
@@ -234,26 +239,26 @@ export default function TransferQueue({
         className="grid gap-2 px-3 py-1.5 border-b border-edge text-[10px] uppercase tracking-wider text-ink-faint shrink-0 items-center"
       >
         <HeaderCell
-          label="소스"
+          label={t("colSource")}
           align="center"
           onResize={(dx) => resizeCol("source", dx)}
         />
         <HeaderCell
-          label="방향"
+          label={t("colDirection")}
           align="center"
           onResize={(dx) => resizeCol("dir", dx)}
         />
         <HeaderCell
-          label="대상"
+          label={t("colTarget")}
           align="center"
           onResize={(dx) => resizeCol("dest", dx)}
         />
         <HeaderCell
-          label="크기"
+          label={t("colSize")}
           align="center"
           onResize={(dx) => resizeCol("size", dx)}
         />
-        <HeaderCell label="상태" align="center" />
+        <HeaderCell label={t("colStatus")} align="center" />
       </div>
 
       {/* Rows */}
@@ -261,10 +266,10 @@ export default function TransferQueue({
         {visible.length === 0 ? (
           <div className="h-full flex items-center justify-center text-[11px] text-ink-faint">
             {tab === "queue"
-              ? "대기 중인 전송이 없습니다"
+              ? t("emptyQueue")
               : tab === "failed"
-              ? "실패한 전송이 없습니다"
-              : "완료된 전송이 없습니다"}
+              ? t("emptyFailed")
+              : t("emptyDone")}
           </div>
         ) : (
           visible.map((e) => (
@@ -283,14 +288,14 @@ export default function TransferQueue({
 
       {/* Tab bar */}
       <div className="flex items-center border-t border-edge shrink-0">
-        {TABS.map((t) => {
-          const count = buckets[t.key].length;
-          const active = tab === t.key;
+        {TAB_KEYS.map((tk) => {
+          const count = buckets[tk.key].length;
+          const active = tab === tk.key;
           return (
             <button
-              key={t.key}
+              key={tk.key}
               onClick={() => {
-                setTab(t.key);
+                setTab(tk.key);
                 clearSelection();
               }}
               className={cn(
@@ -300,7 +305,7 @@ export default function TransferQueue({
                   : "text-ink-faint hover:text-ink-muted"
               )}
             >
-              {t.label}
+              {t(tk.t)}
               {count > 0 && (
                 <span
                   className={cn(
@@ -317,7 +322,8 @@ export default function TransferQueue({
         <div className="flex-1" />
         {selected.size > 0 && (
           <span className="px-3 py-1.5 text-[10px] text-brand font-mono tabular-nums">
-            {selected.size}개 선택
+            {selected.size}
+            {t("selectedCount")}
           </span>
         )}
         {(tab === "failed" || tab === "done") && buckets[tab].length > 0 && (
@@ -325,7 +331,7 @@ export default function TransferQueue({
             onClick={() => onClearTab(tab)}
             className="px-3 py-1.5 text-[10px] text-ink-faint hover:text-ink transition flex items-center gap-1"
           >
-            <Trash2 size={10} /> 비우기
+            <Trash2 size={10} /> {t("clearList")}
           </button>
         )}
       </div>
@@ -420,6 +426,7 @@ function Row({
   onContextMenu: (e: React.MouseEvent) => void;
   onCancelJob: (jobId: string) => void;
 }) {
+  const t = useT();
   const pct =
     entry.size > 0 ? Math.min(100, (entry.bytes / entry.size) * 100) : 0;
 
@@ -464,7 +471,7 @@ function Row({
             <Icon size={11} className={cn(iconColor)} />
           )}
         </span>
-        <PathCell path={entry.rel || entry.source} tone="bright" />
+        <PathCell path={entry.source || entry.rel} tone="bright" />
       </div>
       <div
         className="flex items-center justify-center"
@@ -483,7 +490,9 @@ function Row({
         {formatBytesExact(entry.size)}
       </div>
       <div className="flex items-center gap-1.5 text-[10px] min-w-0">
-        {status === "queued" && <span className="text-ink-faint">대기</span>}
+        {status === "queued" && (
+          <span className="text-ink-faint">{t("stWaiting")}</span>
+        )}
         {isActive && (
           <>
             <span className="text-brand font-mono tabular-nums">
@@ -498,19 +507,23 @@ function Row({
                 onCancelJob(entry.jobId);
               }}
               className="text-ink-faint hover:text-rose-400 transition ml-auto"
-              title="이 잡 취소"
+              title={t("cancelJob")}
             >
               <Ban size={10} />
             </button>
           </>
         )}
-        {status === "done" && <span className="text-emerald-400">완료</span>}
+        {status === "done" && (
+          <span className="text-emerald-400">{t("stDone")}</span>
+        )}
         {status === "failed" && (
           <span className="text-rose-400 truncate" title={entry.error}>
-            {entry.error ?? "실패"}
+            {entry.error ?? t("stFailed")}
           </span>
         )}
-        {status === "cancelled" && <span className="text-amber-400">취소됨</span>}
+        {status === "cancelled" && (
+          <span className="text-amber-400">{t("stCancelled")}</span>
+        )}
       </div>
 
       {isActive && (
@@ -543,10 +556,10 @@ function DirectionIcon({
 }
 
 function directionLabel(sourceKind?: string, destKind?: string): string {
-  if (sourceKind === "local" && destKind === "remote") return "업로드 (로컬 → 서버)";
-  if (sourceKind === "remote" && destKind === "local") return "다운로드 (서버 → 로컬)";
-  if (sourceKind === "local" && destKind === "local") return "로컬 복사";
-  return "서버 → 서버 직송";
+  if (sourceKind === "local" && destKind === "remote") return t("dirUpload");
+  if (sourceKind === "remote" && destKind === "local") return t("dirDownload");
+  if (sourceKind === "local" && destKind === "local") return t("dirLocalCopy");
+  return t("dirDirect");
 }
 
 /**
@@ -570,12 +583,12 @@ function PathCell({
   const lastSlash = path.lastIndexOf("/");
   const dir = lastSlash >= 0 ? path.slice(0, lastSlash + 1) : "";
   const name = lastSlash >= 0 ? path.slice(lastSlash + 1) : path;
-  const nameColor = tone === "bright" ? "text-ink" : "text-ink-muted";
-  const dirColor = tone === "bright" ? "text-ink-faint" : "text-ink-faint";
+  const nameColor = tone === "bright" ? "text-ink font-bold" : "text-ink font-semibold";
+  const dirColor = tone === "bright" ? "text-ink-muted" : "text-ink-muted";
 
   return (
     <div
-      className="flex items-center min-w-0 font-mono"
+      className="flex items-center min-w-0 font-mono font-medium"
       title={path}
     >
       {dir && (

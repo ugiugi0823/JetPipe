@@ -9,6 +9,7 @@ import {
 import { listDir } from "../lib/api";
 import type { LiveSession, PanelSide } from "../types";
 import { cn, joinPath } from "../lib/utils";
+import { useT } from "../lib/i18n";
 
 interface TreeNode {
   path: string;
@@ -61,6 +62,7 @@ export default function TreeView({
   onDropToFolder,
   onDragStartFolder,
 }: Props) {
+  const t = useT();
   const [root, setRoot] = useState<TreeNode | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [dragOverPath, setDragOverPath] = useState<string | null>(null);
@@ -217,7 +219,7 @@ export default function TreeView({
                 onRename(node.path, node.name);
               }}
               className="opacity-0 group-hover:opacity-100 text-ink-faint hover:text-brand shrink-0 transition"
-              title="이름 변경"
+              title={t("rename")}
             >
               <Pencil size={10} />
             </button>
@@ -292,7 +294,7 @@ export default function TreeView({
   if (!session)
     return (
       <div className="h-full flex items-center justify-center text-[11px] text-ink-faint">
-        세션 미연결
+        {t("notConnected")}
       </div>
     );
   if (!root) return <div className="h-full" />;

@@ -23,6 +23,7 @@ import {
 import SettingsDialog from "./SettingsDialog";
 import type { LiveSession, PanelSide, SavedSession } from "../types";
 import { cn } from "../lib/utils";
+import { useT } from "../lib/i18n";
 
 interface Props {
   vault: SavedSession[];
@@ -70,6 +71,7 @@ export default function Sidebar({
   speeds,
   onSpeedtest,
 }: Props) {
+  const t = useT();
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [collapsed, setCollapsed] = useState<boolean>(() => {
@@ -101,7 +103,7 @@ export default function Sidebar({
         <button
           onClick={() => setCollapsed(false)}
           className="text-ink-muted hover:text-ink p-1.5 rounded transition"
-          title="사이드바 펼치기"
+          title={t("expandSidebar")}
         >
           <PanelLeftOpen size={14} />
         </button>
@@ -112,7 +114,7 @@ export default function Sidebar({
             onNewSession();
           }}
           className="text-ink-faint hover:text-ink p-1.5 rounded transition"
-          title="새 세션"
+          title={t("newSession")}
         >
           <Plus size={14} />
         </button>
@@ -122,21 +124,21 @@ export default function Sidebar({
             onImportSshConfig();
           }}
           className="text-ink-faint hover:text-ink p-1.5 rounded transition"
-          title="SSH config 가져오기"
+          title={t("importConfig")}
         >
           <FileDown size={14} />
         </button>
         <button
           onClick={() => setShowSettings(true)}
           className="text-ink-faint hover:text-ink p-1.5 rounded transition"
-          title="설정"
+          title={t("settings")}
         >
           <Settings size={14} />
         </button>
         <div className="flex-1" />
         <div
           className="text-[9px] font-mono text-ink-faint tabular-nums"
-          title={`${vault.length}개 세션`}
+          title={``}
         >
           {vault.length}
         </div>
@@ -164,7 +166,7 @@ export default function Sidebar({
         <button
           onClick={() => setCollapsed(true)}
           className="text-ink-faint hover:text-ink p-1 rounded transition"
-          title="사이드바 접기"
+          title={t("collapseSidebar")}
         >
           <PanelLeftClose size={14} />
         </button>
@@ -191,41 +193,41 @@ export default function Sidebar({
                           : "text-brand2/70"
                       )}
                     />
-                    <span className="text-ink-faint uppercase tracking-wider shrink-0">
+                    <span className="text-ink-muted uppercase tracking-wider shrink-0 font-semibold">
                       {side}
                     </span>
-                    <span className="font-mono text-ink-muted truncate">
+                    <span className="font-mono font-bold text-ink truncate">
                       {live.username}@{live.host}
                     </span>
                   </div>
                   <button
                     onClick={() => onDisconnect(side)}
                     className="shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-rose-500/30 text-rose-400 hover:bg-rose-500/15 hover:border-rose-500/50 transition"
-                    title={`${side} 연결 종료`}
+                    title={` ` + t("disconnect")}
                   >
                     <X size={10} />
-                    <span className="text-[9px]">종료</span>
+                    <span className="text-[9px]">{t("disconnect")}</span>
                   </button>
                 </div>
                 {/* Throughput — measured on demand via the button */}
                 <div className="flex items-center gap-2 pl-4 text-[10px]">
                   {sp?.status === "measuring" ? (
                     <span className="flex items-center gap-1 text-ink-faint">
-                      <Loader2 size={9} className="animate-spin" /> 측정 중…
+                      <Loader2 size={9} className="animate-spin" /> {t("measuring")}
                     </span>
                   ) : sp?.status === "done" ? (
                     <>
-                      <span className="flex items-center gap-1.5 font-mono">
+                      <span className="flex items-center gap-1.5 font-mono font-semibold">
                         <span
                           className="flex items-center gap-0.5 text-brand"
-                          title="업로드"
+                          title={t("upload")}
                         >
                           <ArrowUp size={9} />
                           {fmtSpeed(sp.uploadBps)}
                         </span>
                         <span
                           className="flex items-center gap-0.5 text-brand2"
-                          title="다운로드"
+                          title={t("download")}
                         >
                           <ArrowDown size={9} />
                           {fmtSpeed(sp.downloadBps)}
@@ -234,7 +236,7 @@ export default function Sidebar({
                       <button
                         onClick={() => onSpeedtest(side)}
                         className="text-ink-faint hover:text-ink transition shrink-0"
-                        title="속도 다시 측정"
+                        title={t("remeasure")}
                       >
                         <RefreshCw size={10} />
                       </button>
@@ -243,10 +245,10 @@ export default function Sidebar({
                     <button
                       onClick={() => onSpeedtest(side)}
                       className="flex items-center gap-1 px-1.5 py-0.5 rounded border border-edge hover:border-brand/40 hover:bg-surface text-ink-muted hover:text-ink transition"
-                      title="이 연결의 업로드/다운로드 속도 측정"
+                      title={t("speedtest")}
                     >
                       <Gauge size={10} />
-                      <span>{sp?.status === "error" ? "측정 실패 · 다시" : "속도 검사"}</span>
+                      <span>{sp?.status === "error" ? t("measureFailedRetry") : t("speedtest")}</span>
                     </button>
                   )}
                 </div>
@@ -258,20 +260,20 @@ export default function Sidebar({
 
       <div className="px-3 pb-2 flex items-center justify-between">
         <span className="text-[11px] uppercase tracking-wider text-ink-faint">
-          Sessions ({vault.length})
+          {t("sessions")} ({vault.length})
         </span>
         <div className="flex items-center gap-0.5">
           <button
             onClick={onImportSshConfig}
             className="text-ink-muted hover:text-ink rounded p-1 transition"
-            title="Import from SSH config"
+            title={t("importConfig")}
           >
             <FileDown size={14} />
           </button>
           <button
             onClick={onNewSession}
             className="text-ink-muted hover:text-ink rounded p-1 transition"
-            title="New session"
+            title={t("newSession")}
           >
             <Plus size={14} />
           </button>
@@ -301,9 +303,9 @@ export default function Sidebar({
               )}
             />
             <div className="min-w-0 flex-1">
-              <div className="text-xs font-medium truncate">로컬 PC</div>
+              <div className="text-xs font-medium truncate">{t("localPc")}</div>
               <div className="text-[10px] text-ink-faint truncate font-mono">
-                내 컴퓨터 파일시스템
+                {t("localPcDesc")}
               </div>
             </div>
           </div>
@@ -318,7 +320,7 @@ export default function Sidebar({
                   : "border-edge hover:border-edge hover:bg-surface text-ink-muted"
               )}
             >
-              {liveByPanel.left?.id === LOCAL_ID ? "← 연결됨" : "← left"}
+              {liveByPanel.left?.id === LOCAL_ID ? t("connectedLeft") : "← " + t("leftShort")}
             </button>
             <button
               disabled={connectingPanel !== null}
@@ -330,7 +332,7 @@ export default function Sidebar({
                   : "border-edge hover:border-edge hover:bg-surface text-ink-muted"
               )}
             >
-              {liveByPanel.right?.id === LOCAL_ID ? "연결됨 →" : "right →"}
+              {liveByPanel.right?.id === LOCAL_ID ? t("connectedRight") : t("rightShort") + " →"}
             </button>
           </div>
         </div>
@@ -339,9 +341,9 @@ export default function Sidebar({
 
         {vault.length === 0 && (
           <div className="text-xs text-ink-faint p-4 text-center leading-relaxed">
-            저장된 세션이 없습니다.
+            {t("noSessions")}
             <br />
-            <span className="text-ink-faint">+ 버튼으로 추가</span>
+            <span className="text-ink-faint">{t("addWithPlus")}</span>
           </div>
         )}
         {vault.map((s) => {
@@ -365,8 +367,8 @@ export default function Sidebar({
                   )}
                 />
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs font-medium truncate">{s.label}</div>
-                  <div className="text-[10px] text-ink-faint truncate font-mono">
+                  <div className="text-xs font-semibold truncate">{s.label}</div>
+                  <div className="text-[10px] text-ink-muted truncate font-mono font-semibold">
                     {s.username}@{s.host}
                   </div>
                 </div>
@@ -425,14 +427,14 @@ export default function Sidebar({
                 <button
                   onClick={() => onEditSession(s)}
                   className="text-ink-faint hover:text-brand p-1 transition opacity-0 group-hover:opacity-100"
-                  title="세션 수정"
+                  title={t("editSession")}
                 >
                   <Pencil size={11} />
                 </button>
                 <button
                   onClick={() => onDeleteSession(s.id)}
                   className="text-ink-faint hover:text-rose-400 p-1 transition opacity-0 group-hover:opacity-100"
-                  title="삭제"
+                  title={t("deleteSession")}
                 >
                   <Trash2 size={11} />
                 </button>
@@ -446,10 +448,10 @@ export default function Sidebar({
         <button
           onClick={() => setShowSettings(true)}
           className="w-full flex items-center gap-1.5 px-1.5 py-1 rounded text-[10px] text-ink-faint hover:text-ink hover:bg-surface/50 transition"
-          title="테마 / 설정"
+          title={t("settingsTheme")}
         >
           <Settings size={11} />
-          <span>설정 / 테마</span>
+          <span>{t("settingsTheme")}</span>
         </button>
       </footer>
       {showSettings && (

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { X, FolderKey } from "lucide-react";
 import type { Credential, SavedSession } from "../types";
+import { useT } from "../lib/i18n";
 
 interface Props {
   initial?: SavedSession | null;
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function ConnectionDialog({ initial, onCancel, onSave }: Props) {
+  const t = useT();
   const [label, setLabel] = useState(initial?.label ?? "");
   const [host, setHost] = useState(initial?.host ?? "");
   const [port, setPort] = useState(initial?.port ?? 22);
@@ -140,11 +142,10 @@ export default function ConnectionDialog({ initial, onCancel, onSave }: Props) {
               className="accent-brand"
             />
             <span className="text-[11px] text-ink-muted">
-              SSH 압축 사용 (zlib)
+              {t("useCompression")}
             </span>
             <span className="text-[10px] text-ink-faint">
-              텍스트/코드엔 효과적, 이미 압축된 파일(.pt, .safetensors, 영상)엔
-              비추천
+              {t("compressionHint")}
             </span>
           </label>
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AlertTriangle, X } from "lucide-react";
+import { useT } from "../lib/i18n";
 
 interface Props {
   title: string;
@@ -15,11 +16,12 @@ export default function ConfirmDialog({
   title,
   message,
   detail,
-  confirmText = "확인",
+  confirmText,
   danger = false,
   onCancel,
   onConfirm,
 }: Props) {
+  const t = useT();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,7 +71,7 @@ export default function ConfirmDialog({
             onClick={onCancel}
             className="px-3 py-1.5 text-xs rounded border border-edge text-ink-muted hover:text-ink transition"
           >
-            취소
+            {t("cancel")}
           </button>
           <button
             onClick={handleConfirm}
@@ -80,7 +82,7 @@ export default function ConfirmDialog({
                 : "bg-brand hover:bg-brand text-zinc-950"
             }`}
           >
-            {busy ? "처리 중…" : confirmText}
+            {busy ? t("processing") : confirmText ?? t("confirm")}
           </button>
         </footer>
       </div>

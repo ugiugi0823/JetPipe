@@ -23,6 +23,7 @@ import type { LiveSession, PanelSide } from "../types";
 import { deletePath, mkdir, renamePath } from "../lib/api";
 import { cn, joinPath, parentPath } from "../lib/utils";
 import { getVisits, recordVisit } from "../lib/pathHistory";
+import { useT } from "../lib/i18n";
 
 interface Props {
   side: PanelSide;
@@ -69,6 +70,7 @@ export default function Panel({
   onToggleCompression,
   onDropFrom,
 }: Props) {
+  const t = useT();
   const [selected, setSelected] = useState<string>("/");
   const [pathInput, setPathInput] = useState<string>("/");
   const [refreshTick, setRefreshTick] = useState(0);
@@ -231,20 +233,20 @@ export default function Panel({
       target && target.isDir ? target.path : selected;
 
     items.push({
-      label: "새 폴더",
+      label: t("newFolder"),
       icon: FolderPlus,
       onClick: () => setNewFolder({ parent: parentForNew }),
     });
 
     if (target) {
       items.push({
-        label: "이름 변경",
+        label: t("rename"),
         icon: Pencil,
         onClick: () =>
           setRenameTarget({ path: target.path, name: target.name }),
       });
       items.push({
-        label: "삭제",
+        label: t("delete"),
         icon: Trash2,
         danger: true,
         onClick: () =>
@@ -319,14 +321,14 @@ export default function Panel({
             {session.username}@{session.host}
           </span>
         ) : (
-          <span className="text-[11px] text-ink-faint">미연결</span>
+          <span className="text-[11px] text-ink-faint">{t("notConnected")}</span>
         )}
       </header>
 
       {/* Path bar — single source of truth for selected directory */}
       <div className="flex items-center gap-1 px-3 py-1.5 border-b border-edge bg-base/60 shrink-0">
         <span className="text-[10px] uppercase tracking-wider text-ink-faint shrink-0 mr-1">
-          {side === "left" ? "왼쪽 사이트:" : "오른쪽 사이트:"}
+          {side === "left" ? t("leftSite") : t("rightSite")}
         </span>
         <button
           onClick={navigateBack}
@@ -334,8 +336,8 @@ export default function Panel({
           className="text-ink-faint hover:text-ink disabled:opacity-20 p-0.5 rounded transition shrink-0"
           title={
             canBack
-              ? `뒤로: ${history.paths[history.idx - 1]}`
-              : "이전 기록 없음"
+              ? `${t("histBack")}: ${history.paths[history.idx - 1]}`
+              : t("noHistBack")
           }
         >
           <ArrowLeft size={11} />
@@ -346,8 +348,8 @@ export default function Panel({
           className="text-ink-faint hover:text-ink disabled:opacity-20 p-0.5 rounded transition shrink-0"
           title={
             canForward
-              ? `앞으로: ${history.paths[history.idx + 1]}`
-              : "이후 기록 없음"
+              ? `${t("histFwd")}: ${history.paths[history.idx + 1]}`
+              : t("noHistFwd")
           }
         >
           <ArrowRight size={11} />
@@ -356,7 +358,7 @@ export default function Panel({
           onClick={() => session && setSelected(parentPath(selected))}
           disabled={!session || selected === "/"}
           className="text-ink-faint hover:text-ink disabled:opacity-20 p-0.5 rounded transition shrink-0"
-          title="상위 폴더"
+          title={t("parentFolder")}
         >
           <ChevronUp size={11} />
         </button>
@@ -364,7 +366,7 @@ export default function Panel({
           onClick={() => session && setSelected(session.home || "/")}
           disabled={!session}
           className="text-ink-faint hover:text-ink disabled:opacity-20 p-0.5 rounded transition shrink-0"
-          title="홈"
+          title={t("home")}
         >
           <Home size={11} />
         </button>
@@ -388,7 +390,7 @@ export default function Panel({
             onClick={() => setShowHistoryMenu((v) => !v)}
             disabled={!session}
             className="absolute top-1/2 -translate-y-1/2 right-1 text-ink-faint hover:text-ink disabled:opacity-20 transition p-0.5 rounded"
-            title="방문한 경로"
+            title={t("visitedPaths")}
           >
             <ChevronDown size={11} />
           </button>
@@ -413,11 +415,7 @@ export default function Panel({
               ? "text-brand hover:text-brand"
               : "text-ink-faint hover:text-ink"
           )}
-          title={
-            compression
-              ? "SSH 압축: 켜짐 — 클릭하면 끄고 재연결\n(텍스트/코드/JSON에 유리. LLM 모델/.pt/.safetensors는 끄는 게 빠름)"
-              : "SSH 압축: 꺼짐 — 클릭하면 켜고 재연결\n(LLM 모델/binary 파일은 OFF가 맞음. 텍스트/코드만 ON 추천)"
-          }
+          title={compression ? t("compOn") : t("compOff")}
         >
           {compression ? <Zap size={11} /> : <ZapOff size={11} />}
         </button>
@@ -425,7 +423,7 @@ export default function Panel({
           onClick={() => setNewFolder({ parent: selected })}
           disabled={!session}
           className="text-ink-faint hover:text-ink disabled:opacity-30 transition p-0.5 rounded shrink-0"
-          title="새 폴더"
+          title={t("newFolder")}
         >
           <FolderPlus size={11} />
         </button>
@@ -433,7 +431,7 @@ export default function Panel({
           onClick={() => setRefreshTick((t) => t + 1)}
           disabled={!session}
           className="text-ink-faint hover:text-ink disabled:opacity-30 transition p-0.5 rounded shrink-0"
-          title="새로고침"
+          title={t("refresh")}
         >
           <RefreshCw size={11} />
         </button>
@@ -483,41 +481,39 @@ export default function Panel({
 
       {dragOver && (
         <div className="pointer-events-none absolute top-2 right-2 px-2.5 py-1 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] font-medium tracking-wide animate-pulse-glow">
-          ⚡ {selected} 로 전송
+          ⚡ {selected} {t("transferTo")}
         </div>
       )}
 
       {newFolder && (
         <PromptDialog
-          title="새 폴더"
-          label={`경로: ${newFolder.parent}`}
+          title={t("newFolder")}
+          label={`${t("pathColon")}: ${newFolder.parent}`}
           initialValue="new-folder"
-          confirmText="만들기"
+          confirmText={t("create")}
           onCancel={() => setNewFolder(null)}
           onConfirm={handleCreateFolder}
         />
       )}
       {renameTarget && (
         <PromptDialog
-          title="이름 변경"
-          label={`현재: ${renameTarget.path}`}
+          title={t("rename")}
+          label={`${t("currentColon")}: ${renameTarget.path}`}
           initialValue={renameTarget.name}
           selectBasename
-          confirmText="변경"
+          confirmText={t("change")}
           onCancel={() => setRenameTarget(null)}
           onConfirm={handleRename}
         />
       )}
       {deleteTarget && (
         <ConfirmDialog
-          title={deleteTarget.isDir ? "폴더 삭제" : "파일 삭제"}
+          title={deleteTarget.isDir ? t("delFolderTitle") : t("delFileTitle")}
           message={
-            deleteTarget.isDir
-              ? "이 폴더와 안의 모든 내용을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
-              : "이 파일을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+            deleteTarget.isDir ? t("delFolderMsg") : t("delFileMsg")
           }
           detail={deleteTarget.path}
-          confirmText="삭제"
+          confirmText={t("delete")}
           danger
           onCancel={() => setDeleteTarget(null)}
           onConfirm={handleDelete}
@@ -546,6 +542,7 @@ function PathHistoryMenu({
   onPick: (path: string) => void;
   onClose: () => void;
 }) {
+  const t = useT();
   const ref = useRef<HTMLDivElement>(null);
   const [paths] = useState(() => getVisits(savedId));
 
@@ -570,11 +567,11 @@ function PathHistoryMenu({
       className="absolute z-30 top-full left-0 right-0 mt-1 bg-base border border-edge rounded-md shadow-2xl py-1 max-h-72 overflow-y-auto"
     >
       <div className="px-2 py-1 text-[9px] uppercase tracking-wider text-ink-faint flex items-center gap-1">
-        <History size={10} /> 방문 기록 ({paths.length})
+        <History size={10} /> {t("visitHistory")} ({paths.length})
       </div>
       {paths.length === 0 ? (
         <div className="px-3 py-2 text-[11px] text-ink-faint">
-          이 세션에서 방문한 경로가 없습니다
+          {t("noVisits")}
         </div>
       ) : (
         paths.map((p) => (
