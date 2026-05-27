@@ -77,6 +77,31 @@ pub struct PipeRequest {
     pub source_path: String,
     pub dest_session_id: String,
     pub dest_path: String,
+    /// Destination paths the user chose to skip (conflict resolution). Files
+    /// whose dest is in this set are dropped from the plan before transfer.
+    #[serde(default)]
+    pub skip: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct ScanRequest {
+    pub source_session_id: String,
+    pub source_path: String,
+    pub dest_session_id: String,
+    pub dest_path: String,
+}
+
+/// One file that already exists at the destination. The frontend uses the
+/// size/mtime pairs to drive the "overwrite if size differs / if newer"
+/// conflict actions without another backend round-trip.
+#[derive(Debug, Clone, Serialize)]
+pub struct Conflict {
+    pub rel: String,
+    pub dest: String,
+    pub source_size: u64,
+    pub dest_size: u64,
+    pub source_mtime: Option<u64>,
+    pub dest_mtime: Option<u64>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -404,6 +429,61 @@ fn copy_file_simple(
     }
 }
 
+/// Scan which files the transfer would overwrite: walk the source, and for
+/// every file whose mirrored destination path already exists, report both
+/// sizes and mtimes so the UI can offer per-file conflict actions.
+#[tauri::command]
+pub async fn cmd_scan_conflicts(
+    store: tauri::State<'_, Arc<SessionStore>>,
+    req: ScanRequest,
+) -> JetResult<Vec<Conflict>> {
+    let src = store.get(&req.source_session_id)?;
+    let dst = store.get(&req.dest_session_id)?;
+    let src_is_dir = src.is_dir(&req.source_path)?;
+
+    // (source_path, dest_path, source_size, source_mtime) for files only.
+    let files: Vec<(String, String, u64, Option<u64>)> = if src_is_dir {
+        walk_tree(&src, &req.source_path, &req.dest_path)?
+            .into_iter()
+            .filter(|e| !e.is_dir)
+            .map(|e| (e.src, e.dst, e.size, e.mtime))
+            .collect()
+    } else {
+        let (size, mtime) = src.stat_opt(&req.source_path).unwrap_or((0, None));
+        vec![(
+            req.source_path.clone(),
+            req.dest_path.clone(),
+            size,
+            mtime,
+        )]
+    };
+
+    let root_prefix_len = req.source_path.trim_end_matches('/').len();
+    let mut conflicts = Vec::new();
+    for (src_p, dst_p, src_size, src_mtime) in files {
+        if let Some((dest_size, dest_mtime)) = dst.stat_opt(&dst_p) {
+            let rel = if src_is_dir && src_p.len() > root_prefix_len {
+                src_p[root_prefix_len..].trim_start_matches('/').to_string()
+            } else {
+                Path::new(&src_p)
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or(&src_p)
+                    .to_string()
+            };
+            conflicts.push(Conflict {
+                rel,
+                dest: dst_p,
+                source_size: src_size,
+                dest_size,
+                source_mtime: src_mtime,
+                dest_mtime,
+            });
+        }
+    }
+    Ok(conflicts)
+}
+
 /// Stream a file or directory tree between two endpoints (each either a
 /// remote SFTP server or the local machine).
 ///
@@ -441,7 +521,7 @@ pub async fn cmd_pipe_transfer(
     let start = Instant::now();
 
     // Build the file plan + create the destination directory skeleton.
-    let files: Vec<EnqueuedFile> = if src_is_dir {
+    let mut files: Vec<EnqueuedFile> = if src_is_dir {
         let walk = match walk_tree(&src, &src_path, &dst_path) {
             Ok(v) => v,
             Err(e) => {
@@ -494,6 +574,13 @@ pub async fn cmd_pipe_transfer(
             size,
         }]
     };
+
+    // Drop files the user chose to skip during conflict resolution.
+    if !req.skip.is_empty() {
+        let skip: std::collections::HashSet<&str> =
+            req.skip.iter().map(|s| s.as_str()).collect();
+        files.retain(|f| !skip.contains(f.dest.as_str()));
+    }
 
     let _ = app.emit(
         "transfer:enqueue",

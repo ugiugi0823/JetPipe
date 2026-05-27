@@ -56,6 +56,27 @@ impl Connection {
         }
     }
 
+    /// Stat a path, returning `(size, mtime_secs)` if it exists. `None` when
+    /// the path is absent. Used by the conflict scan to detect files that
+    /// already exist at the destination.
+    pub fn stat_opt(&self, path: &str) -> Option<(u64, Option<u64>)> {
+        match self {
+            Connection::Remote(c) => c
+                .sftp()
+                .stat(Path::new(path))
+                .ok()
+                .map(|s| (s.size.unwrap_or(0), s.mtime)),
+            Connection::Local => fs::metadata(path).ok().map(|m| {
+                let mtime = m
+                    .modified()
+                    .ok()
+                    .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
+                    .map(|d| d.as_secs());
+                (m.len(), mtime)
+            }),
+        }
+    }
+
     pub fn mkdir(&self, path: &str) -> JetResult<()> {
         match self {
             Connection::Remote(c) => {
@@ -202,6 +223,7 @@ pub struct WalkEntry {
     pub dst: String,
     pub is_dir: bool,
     pub size: u64,
+    pub mtime: Option<u64>,
 }
 
 pub fn walk_tree(conn: &Connection, src_root: &str, dst_root: &str) -> JetResult<Vec<WalkEntry>> {
@@ -212,6 +234,7 @@ pub fn walk_tree(conn: &Connection, src_root: &str, dst_root: &str) -> JetResult
         dst: dst_root.to_string(),
         is_dir: true,
         size: 0,
+        mtime: None,
     });
     // Guard against symlink loops by refusing to descend into a directory
     // path we've already visited.
@@ -232,6 +255,7 @@ pub fn walk_tree(conn: &Connection, src_root: &str, dst_root: &str) -> JetResult
                     dst: dp.clone(),
                     is_dir: true,
                     size: 0,
+                    mtime: None,
                 });
                 stack.push((e.path, dp));
             } else {
@@ -240,6 +264,7 @@ pub fn walk_tree(conn: &Connection, src_root: &str, dst_root: &str) -> JetResult
                     dst: dp,
                     is_dir: false,
                     size: e.size,
+                    mtime: e.modified,
                 });
             }
         }

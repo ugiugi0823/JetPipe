@@ -33,6 +33,15 @@ export interface RemoteEntry {
   modified: number | null;
 }
 
+export interface Conflict {
+  rel: string;
+  dest: string;
+  sourceSize: number;
+  destSize: number;
+  sourceMtime: number | null;
+  destMtime: number | null;
+}
+
 export type PanelSide = "left" | "right";
 
 export type TransferStatus =

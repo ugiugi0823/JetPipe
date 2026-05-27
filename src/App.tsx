@@ -4,10 +4,17 @@ import Sidebar from "./components/Sidebar";
 import Panel from "./components/Panel";
 import ConnectionDialog from "./components/ConnectionDialog";
 import ImportDialog from "./components/ImportDialog";
+import ConflictDialog from "./components/ConflictDialog";
 import TransferQueue from "./components/TransferQueue";
 import Splitter from "./components/Splitter";
 import DevConsole from "./components/DevConsole";
-import type { LiveSession, PanelSide, QueueEntry, SavedSession } from "./types";
+import type {
+  Conflict,
+  LiveSession,
+  PanelSide,
+  QueueEntry,
+  SavedSession,
+} from "./types";
 import {
   cancelTransfer,
   connect,
@@ -16,6 +23,7 @@ import {
   onEnqueue,
   onFileProgress,
   pipeTransfer,
+  scanConflicts,
   speedtest,
 } from "./lib/api";
 
@@ -50,6 +58,18 @@ interface Workspace {
   right: PanelConn | null;
 }
 
+interface TransferParams {
+  wsId: string;
+  targetSide: PanelSide;
+  sourceSessionId: string;
+  sourcePath: string;
+  destSessionId: string;
+  destPath: string;
+  sourceSide: PanelSide;
+  sourceKind: string;
+  destKind: string;
+}
+
 let wsCounter = 1;
 function newWorkspace(): Workspace {
   return { id: `ws-${wsCounter++}-${Date.now()}`, left: null, right: null };
@@ -76,6 +96,13 @@ export default function App() {
   const [showDialog, setShowDialog] = useState(false);
   const [editingSession, setEditingSession] = useState<SavedSession | null>(null);
   const [showImport, setShowImport] = useState(false);
+  // Pending conflict resolution: set when a drop hits existing files at the
+  // destination, holding the conflicts + the transfer params to resume once
+  // the user resolves them in the dialog.
+  const [conflict, setConflict] = useState<{
+    conflicts: Conflict[];
+    params: TransferParams;
+  } | null>(null);
   const [queue, setQueue] = useState<QueueEntry[]>([]);
   const jobMeta = useRef<
     Map<
@@ -307,28 +334,64 @@ export default function App() {
     const target = ws?.[targetSide];
     if (!target) return;
     const destPath = joinPath(destDir, sourceName);
-    const jobId = crypto.randomUUID();
-    jobMeta.current.set(jobId, {
+    const params: TransferParams = {
+      wsId,
+      targetSide,
+      sourceSessionId,
+      sourcePath,
+      destSessionId: target.live.id,
+      destPath,
       sourceSide,
-      destSide: targetSide,
       sourceKind: ws?.[sourceSide]?.live.kind ?? "remote",
       destKind: target.live.kind ?? "remote",
-    });
+    };
 
+    // Check for files that already exist at the destination first. If any,
+    // let the user resolve them before transferring; otherwise go straight.
+    let conflicts: Conflict[] = [];
     try {
-      await pipeTransfer({
-        jobId,
+      conflicts = await scanConflicts({
         sourceSessionId,
         sourcePath,
         destSessionId: target.live.id,
         destPath,
       });
     } catch {
+      // Scan failed (timeout/unreachable) — fall back to a plain transfer
+      // (overwrite), matching the previous behaviour.
+      conflicts = [];
+    }
+
+    if (conflicts.length === 0) {
+      await runTransfer(params, []);
+    } else {
+      setConflict({ conflicts, params });
+    }
+  }
+
+  async function runTransfer(params: TransferParams, skip: string[]) {
+    const jobId = crypto.randomUUID();
+    jobMeta.current.set(jobId, {
+      sourceSide: params.sourceSide,
+      destSide: params.targetSide,
+      sourceKind: params.sourceKind,
+      destKind: params.destKind,
+    });
+    try {
+      await pipeTransfer({
+        jobId,
+        sourceSessionId: params.sourceSessionId,
+        sourcePath: params.sourcePath,
+        destSessionId: params.destSessionId,
+        destPath: params.destPath,
+        skip,
+      });
+    } catch {
       /* per-file errors surface via transfer:file events */
     } finally {
       // Job finished (success or fail) — refresh the destination panel so
       // the newly-written files appear without a manual refresh.
-      bumpRefresh(wsId, targetSide);
+      bumpRefresh(params.wsId, params.targetSide);
     }
   }
 
@@ -634,6 +697,18 @@ export default function App() {
           existing={vault}
           onCancel={() => setShowImport(false)}
           onImport={handleImport}
+        />
+      )}
+
+      {conflict && (
+        <ConflictDialog
+          conflicts={conflict.conflicts}
+          onResolve={(skip) => {
+            const { params } = conflict;
+            setConflict(null);
+            void runTransfer(params, skip);
+          }}
+          onCancel={() => setConflict(null)}
         />
       )}
 

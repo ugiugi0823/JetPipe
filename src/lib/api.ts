@@ -18,6 +18,9 @@ const INVOKE_TIMEOUT_MS: Record<string, number> = {
   cmd_keychain_get: 8_000,
   cmd_keychain_set: 8_000,
   cmd_keychain_delete: 8_000,
+  // Walks the source tree + stats each destination file; big trees take a
+  // while, so give it room before failing.
+  cmd_scan_conflicts: 60_000,
   // Transfers run for arbitrarily long; let Rust manage the lifetime.
   cmd_pipe_transfer: 0,
   cmd_cancel_transfer: 5_000,
@@ -55,6 +58,7 @@ async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T
   }
 }
 import type {
+  Conflict,
   Credential,
   LiveSession,
   QueueEntry,
@@ -157,12 +161,46 @@ export async function listDir(id: string, path: string): Promise<RemoteEntry[]> 
   }));
 }
 
+export async function scanConflicts(args: {
+  sourceSessionId: string;
+  sourcePath: string;
+  destSessionId: string;
+  destPath: string;
+}): Promise<Conflict[]> {
+  const rows = await invoke<
+    {
+      rel: string;
+      dest: string;
+      source_size: number;
+      dest_size: number;
+      source_mtime: number | null;
+      dest_mtime: number | null;
+    }[]
+  >("cmd_scan_conflicts", {
+    req: {
+      source_session_id: args.sourceSessionId,
+      source_path: args.sourcePath,
+      dest_session_id: args.destSessionId,
+      dest_path: args.destPath,
+    },
+  });
+  return rows.map((r) => ({
+    rel: r.rel,
+    dest: r.dest,
+    sourceSize: r.source_size,
+    destSize: r.dest_size,
+    sourceMtime: r.source_mtime,
+    destMtime: r.dest_mtime,
+  }));
+}
+
 export async function pipeTransfer(args: {
   jobId: string;
   sourceSessionId: string;
   sourcePath: string;
   destSessionId: string;
   destPath: string;
+  skip?: string[];
 }) {
   return invoke("cmd_pipe_transfer", {
     req: {
@@ -171,6 +209,7 @@ export async function pipeTransfer(args: {
       source_path: args.sourcePath,
       dest_session_id: args.destSessionId,
       dest_path: args.destPath,
+      skip: args.skip ?? [],
     },
   });
 }

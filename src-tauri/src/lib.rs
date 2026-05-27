@@ -26,6 +26,7 @@ pub fn run() {
             session::cmd_mkdir,
             session::cmd_rename,
             session::cmd_delete,
+            transfer::cmd_scan_conflicts,
             transfer::cmd_pipe_transfer,
             transfer::cmd_cancel_transfer,
             transfer::cmd_speedtest,

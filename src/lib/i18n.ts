@@ -152,6 +152,14 @@ const ko: Dict = {
   theme_crimson: "검붉은 어둠 + red/amber",
   theme_nord: "차분한 슬레이트 + frost",
   theme_mint: "민트 화이트 + emerald/teal",
+  // conflict dialog
+  conflictTitle: "파일 충돌",
+  conflictExists: "대상에 이미 같은 파일이 있습니다",
+  actOverwrite: "덮어쓰기",
+  actSkip: "건너뛰기",
+  actOverwriteIfSize: "크기 다르면 덮어쓰기",
+  actOverwriteIfNewer: "더 최신이면 덮어쓰기",
+  applyToAll: "이후 충돌에 모두 적용",
 };
 
 const en: Dict = {
@@ -284,6 +292,13 @@ const en: Dict = {
   theme_crimson: "Dark red + red/amber",
   theme_nord: "Calm slate + frost",
   theme_mint: "Mint white + emerald/teal",
+  conflictTitle: "File conflict",
+  conflictExists: "A file already exists at the destination",
+  actOverwrite: "Overwrite",
+  actSkip: "Skip",
+  actOverwriteIfSize: "Overwrite if size differs",
+  actOverwriteIfNewer: "Overwrite if newer",
+  applyToAll: "Apply to all remaining conflicts",
 };
 
 const zh: Dict = {
@@ -416,6 +431,13 @@ const zh: Dict = {
   theme_crimson: "暗红 + red/amber",
   theme_nord: "沉静岩蓝 + frost",
   theme_mint: "薄荷白 + emerald/teal",
+  conflictTitle: "文件冲突",
+  conflictExists: "目标位置已存在同名文件",
+  actOverwrite: "覆盖",
+  actSkip: "跳过",
+  actOverwriteIfSize: "大小不同则覆盖",
+  actOverwriteIfNewer: "较新则覆盖",
+  applyToAll: "应用于之后所有冲突",
 };
 
 const ja: Dict = {
@@ -548,6 +570,13 @@ const ja: Dict = {
   theme_crimson: "暗い赤 + red/amber",
   theme_nord: "落ち着いたスレート + frost",
   theme_mint: "ミントホワイト + emerald/teal",
+  conflictTitle: "ファイル競合",
+  conflictExists: "宛先に同名ファイルが既に存在します",
+  actOverwrite: "上書き",
+  actSkip: "スキップ",
+  actOverwriteIfSize: "サイズが異なれば上書き",
+  actOverwriteIfNewer: "新しければ上書き",
+  applyToAll: "以降の競合すべてに適用",
 };
 
 const DICTS: Record<Lang, Dict> = { ko, en, zh, ja };
