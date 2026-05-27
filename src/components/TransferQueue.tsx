@@ -233,19 +233,27 @@ export default function TransferQueue({
         style={{ gridTemplateColumns: template }}
         className="grid gap-2 px-3 py-1.5 border-b border-edge text-[10px] uppercase tracking-wider text-ink-faint shrink-0 items-center"
       >
-        <HeaderCell label="소스" onResize={(dx) => resizeCol("source", dx)} />
+        <HeaderCell
+          label="소스"
+          align="center"
+          onResize={(dx) => resizeCol("source", dx)}
+        />
         <HeaderCell
           label="방향"
           align="center"
           onResize={(dx) => resizeCol("dir", dx)}
         />
-        <HeaderCell label="대상" onResize={(dx) => resizeCol("dest", dx)} />
+        <HeaderCell
+          label="대상"
+          align="center"
+          onResize={(dx) => resizeCol("dest", dx)}
+        />
         <HeaderCell
           label="크기"
-          align="right"
+          align="center"
           onResize={(dx) => resizeCol("size", dx)}
         />
-        <HeaderCell label="상태" />
+        <HeaderCell label="상태" align="center" />
       </div>
 
       {/* Rows */}
