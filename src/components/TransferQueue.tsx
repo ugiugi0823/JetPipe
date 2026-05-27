@@ -241,7 +241,7 @@ export default function TransferQueue({
       {/* Column headers */}
       <div
         style={{ gridTemplateColumns: template }}
-        className="grid gap-2 px-3 py-1.5 border-b border-edge text-[10px] uppercase tracking-wider text-ink-faint shrink-0 items-center"
+        className="grid gap-2 px-3 py-1.5 border-b border-edge text-[10px] uppercase tracking-wider text-ink-faint shrink-0 items-center overflow-hidden"
       >
         <HeaderCell
           label={t("colSource")}
@@ -267,7 +267,7 @@ export default function TransferQueue({
       </div>
 
       {/* Rows */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden">
         {visible.length === 0 ? (
           <div className="h-full flex items-center justify-center text-[11px] text-ink-faint">
             {tab === "queue"
@@ -468,7 +468,7 @@ function Row({
           : "hover:bg-surface/40"
       )}
     >
-      <div className="flex items-center gap-1.5 min-w-0">
+      <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
         <span className="shrink-0 w-3 flex items-center justify-center">
           {selected ? (
             <CheckSquare size={10} className="text-brand" />
@@ -476,10 +476,10 @@ function Row({
             <Icon size={11} className={cn(iconColor)} />
           )}
         </span>
-        <PathCell path={entry.source || entry.rel} tone="bright" />
+        <PathCell path={entry.source || entry.rel} />
       </div>
       <div
-        className="flex items-center justify-center"
+        className="flex items-center justify-center min-w-0 overflow-hidden"
         title={directionLabel(entry.sourceKind, entry.destKind)}
       >
         <DirectionIcon
@@ -487,14 +487,14 @@ function Row({
           destKind={entry.destKind}
         />
       </div>
-      <PathCell path={entry.dest} tone="dim" />
+      <PathCell path={entry.dest} />
       <div
-        className="text-right font-mono text-ink-faint tabular-nums flex items-center justify-end"
+        className="text-right font-mono text-ink-faint tabular-nums flex items-center justify-end min-w-0 overflow-hidden"
         title={formatBytes(entry.size)}
       >
         {formatBytesExact(entry.size)}
       </div>
-      <div className="flex items-center gap-1.5 text-[10px] min-w-0">
+      <div className="flex items-center gap-1.5 text-[10px] min-w-0 overflow-hidden">
         {status === "queued" && (
           <span className="text-ink-faint">{t("stWaiting")}</span>
         )}
@@ -578,28 +578,26 @@ function directionLabel(sourceKind?: string, destKind?: string): string {
  * the last `/` and shrinking only the prefix makes wider columns reveal
  * more directory context while filenames stay readable at any width.
  */
-function PathCell({
-  path,
-  tone,
-}: {
-  path: string;
-  tone: "bright" | "dim";
-}) {
+function PathCell({ path }: { path: string }) {
   const lastSlash = path.lastIndexOf("/");
   const dir = lastSlash >= 0 ? path.slice(0, lastSlash + 1) : "";
   const name = lastSlash >= 0 ? path.slice(lastSlash + 1) : path;
-  const nameColor = tone === "bright" ? "text-ink font-bold" : "text-ink font-semibold";
-  const dirColor = tone === "bright" ? "text-ink-muted" : "text-ink-muted";
+  // Whole path is bold; the directory prefix is just slightly dimmer in
+  // color so the filename still reads as the focus.
+  const nameColor = "text-ink";
+  const dirColor = "text-ink-muted";
 
   return (
     <div
-      className="flex items-center min-w-0 font-mono font-medium"
+      className="flex items-center min-w-0 overflow-hidden font-mono font-bold"
       title={path}
     >
       {dir && (
         <span className={cn("truncate shrink", dirColor)}>{dir}</span>
       )}
-      <span className={cn("shrink-0", nameColor)}>{name}</span>
+      <span className={cn("truncate shrink-0 max-w-full", nameColor)}>
+        {name}
+      </span>
     </div>
   );
 }
