@@ -148,6 +148,49 @@ export default function Sidebar({
         </button>
       </header>
 
+      {/* Active connections + disconnect, pinned near the top so the
+          종료 buttons are an easy reach (not buried in the footer). */}
+      {(liveByPanel.left || liveByPanel.right) && (
+        <div className="mx-3 mb-2 rounded-md border border-edge/70 bg-surface/30 px-2 py-1.5 space-y-1">
+          {(["left", "right"] as PanelSide[]).map((side) => {
+            const live = liveByPanel[side];
+            if (!live) return null;
+            return (
+              <div
+                key={side}
+                className="flex items-center justify-between gap-2 text-[10px]"
+              >
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <ArrowLeftRight
+                    size={10}
+                    className={cn(
+                      "shrink-0",
+                      side === "left"
+                        ? "rotate-180 text-brand/70"
+                        : "text-brand2/70"
+                    )}
+                  />
+                  <span className="text-ink-faint uppercase tracking-wider shrink-0">
+                    {side}
+                  </span>
+                  <span className="font-mono text-ink-muted truncate">
+                    {live.username}@{live.host}
+                  </span>
+                </div>
+                <button
+                  onClick={() => onDisconnect(side)}
+                  className="shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-rose-500/30 text-rose-400 hover:bg-rose-500/15 hover:border-rose-500/50 transition"
+                  title={`${side} 연결 종료`}
+                >
+                  <X size={10} />
+                  <span className="text-[9px]">종료</span>
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <div className="px-3 pb-2 flex items-center justify-between">
         <span className="text-[11px] uppercase tracking-wider text-ink-faint">
           Sessions ({vault.length})
@@ -335,48 +378,9 @@ export default function Sidebar({
       </div>
 
       <footer className="border-t border-edge/80 px-3 py-2.5 space-y-1">
-        {(["left", "right"] as PanelSide[]).map((side) => {
-          const live = liveByPanel[side];
-          return (
-            <div
-              key={side}
-              className="flex items-center justify-between gap-2 text-[10px]"
-            >
-              <div className="flex items-center gap-1.5 min-w-0">
-                <ArrowLeftRight
-                  size={10}
-                  className={cn(
-                    "shrink-0",
-                    side === "left" ? "rotate-180 text-brand/70" : "text-brand2/70"
-                  )}
-                />
-                <span className="text-ink-faint uppercase tracking-wider">
-                  {side}
-                </span>
-                {live ? (
-                  <span className="font-mono text-ink-muted truncate">
-                    {live.username}@{live.host}
-                  </span>
-                ) : (
-                  <span className="text-ink-faint">—</span>
-                )}
-              </div>
-              {live && (
-                <button
-                  onClick={() => onDisconnect(side)}
-                  className="shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-rose-500/30 text-rose-400 hover:bg-rose-500/15 hover:border-rose-500/50 transition"
-                  title={`${side} 연결 종료`}
-                >
-                  <X size={10} />
-                  <span className="text-[9px]">종료</span>
-                </button>
-              )}
-            </div>
-          );
-        })}
         <button
           onClick={() => setShowSettings(true)}
-          className="w-full mt-1 flex items-center gap-1.5 px-1.5 py-1 rounded text-[10px] text-ink-faint hover:text-ink hover:bg-surface/50 transition"
+          className="w-full flex items-center gap-1.5 px-1.5 py-1 rounded text-[10px] text-ink-faint hover:text-ink hover:bg-surface/50 transition"
           title="테마 / 설정"
         >
           <Settings size={11} />
